@@ -1,0 +1,81 @@
+{
+ "version": 1,
+ "owned": {
+  "acme/Tiny-GGUF:MTP/Tiny-draft-Q4_0.gguf": {
+   "paths": [
+    "acme/Tiny-GGUF/Tiny-draft-Q4_0.gguf",
+    "acme/Tiny-GGUF/mmproj-F16.gguf"
+   ],
+   "sha256": "7849435a351d676f9506c1f5b561d370527f4602fe4e576029acbd706ad46e11"
+  },
+  "acme/Tiny-GGUF:Tiny-BF16.gguf": {
+   "paths": [
+    "acme/Tiny-GGUF/Tiny-BF16.gguf",
+    "acme/Tiny-GGUF/mmproj-F16.gguf"
+   ],
+   "sha256": "93bd3e2014fb1bd6a1e1fa202c1e962da10d7b0a50d02b89a9e10e0acdb8706c"
+  },
+  "acme/Tiny-GGUF:Tiny-IQ4_XS.gguf": {
+   "paths": [
+    "acme/Tiny-GGUF/Tiny-IQ4_XS.gguf",
+    "acme/Tiny-GGUF/mmproj-F16.gguf"
+   ],
+   "sha256": "3534785e7c5fec3e2689dd2e8235d8059f406da40519c49a0093b245e77b2c37"
+  },
+  "acme/Tiny-GGUF:Tiny-MXFP4.gguf": {
+   "paths": [
+    "acme/Tiny-GGUF/Tiny-MXFP4.gguf",
+    "acme/Tiny-GGUF/mmproj-F16.gguf"
+   ],
+   "sha256": "b71ff0e98eb29bf64cea370813f4fc4592ab462c4eb5e31e5bcedfb2439af8ab"
+  },
+  "acme/Tiny-GGUF:Tiny-Q4_K_M.gguf": {
+   "paths": [
+    "acme/Tiny-GGUF/Tiny-Q4_K_M.gguf",
+    "acme/Tiny-GGUF/mmproj-F16.gguf"
+   ],
+   "sha256": "ed8ae732cd46a67765785577ffd2f5cf99fe73cc6dd577ad75b87643ee50c659"
+  },
+  "acme/Tiny-GGUF:Tiny-Q6_K.gguf": {
+   "paths": [
+    "acme/Tiny-GGUF/Tiny-Q6_K.gguf",
+    "acme/Tiny-GGUF/mmproj-F16.gguf"
+   ],
+   "sha256": "4914142fb02715f745d706d2aad9c4df2b11cbd191107958f6d50d77e65fdaa3"
+  },
+  "acme/Tiny-GGUF:Tiny-Q8_0-00001-of-00002.gguf": {
+   "paths": [
+    "acme/Tiny-GGUF/Tiny-Q8_0-00001-of-00002.gguf",
+    "acme/Tiny-GGUF/mmproj-F16.gguf"
+   ],
+   "sha256": "96af8b4933b944bc61107844c9cd0e6986f4add076f2db54982e868cf0630c96"
+  },
+  "acme/Tiny-GGUF:Tiny-Q8_0-00002-of-00002.gguf": {
+   "paths": [
+    "acme/Tiny-GGUF/Tiny-Q8_0-00002-of-00002.gguf",
+    "acme/Tiny-GGUF/mmproj-F16.gguf"
+   ],
+   "sha256": "0fea3322e99e4fd7c9c9ca6a6bded8163add6b14de3380ee6ac335857c29682e"
+  },
+  "acme/Tiny-GGUF:Tiny-UD-Q4_K_XL.gguf": {
+   "paths": [
+    "acme/Tiny-GGUF/Tiny-UD-Q4_K_XL.gguf",
+    "acme/Tiny-GGUF/mmproj-F16.gguf"
+   ],
+   "sha256": "de9d66046947b7df76fb549375530033c1f728b93c198514342bacb7c2b434ad"
+  },
+  "other/Small-GGUF:Small-Q4_K_M.gguf": {
+   "paths": [
+    "other/Small-GGUF/Small-Q4_K_M.gguf"
+   ],
+   "sha256": "8bfac2da759e96460590065f4ba0b9c3275eb11705ededa24d86525ce964b75b"
+  },
+  "other/Small-GGUF:Small-Q8_0.gguf": {
+   "paths": [
+    "other/Small-GGUF/Small-Q8_0.gguf"
+   ],
+   "sha256": "d81c98172b31e5ae40ba664bfa29cef0048e48e15e96404833b04463306475a2"
+  }
+ },
+ "tombstones": {}
+}

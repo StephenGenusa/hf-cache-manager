@@ -1,0 +1,149 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Light theme (the default values), then the dark palette. */
+:root {
+  --background: #f6f7f9;
+  --foreground: #1b1f27;
+  --card: #ffffff;
+  --card-foreground: #1b1f27;
+  --bar: #ffffff;
+  --popover: #ffffff;
+  --popover-foreground: #1b1f27;
+  --primary: #3b63d8;
+  --primary-foreground: #ffffff;
+  --secondary: #eceff4;
+  --secondary-foreground: #232937;
+  --muted: #eef0f4;
+  --muted-foreground: #5d6678;
+  --accent: #e6ecfb;
+  --accent-foreground: #1b1f27;
+  --destructive: #c4344a;
+  --destructive-foreground: #ffffff;
+  --danger: #b4233a;
+  --danger-soft: #fbeaed;
+  --success: #1c7c40;
+  --success-soft: #e3f4ea;
+  --warning: #8a5a00;
+  --warning-soft: #fdf3d9;
+  --warning-border: #e9d08a;
+  --border: #dde1e8;
+  --input: #cfd5df;
+  --field: #ffffff;
+  --ring: #5b8cff;
+  --tag: #e8ebf1;
+  --tag-foreground: #4a566b;
+  --radius: 0.5rem;
+  color-scheme: light;
+}
+
+.dark {
+  --background: #0f1115;
+  --foreground: #d7dae0;
+  --card: #12151b;
+  --card-foreground: #d7dae0;
+  --bar: #151820;
+  --popover: #12151b;
+  --popover-foreground: #d7dae0;
+  --primary: #3b63d8;
+  --primary-foreground: #ffffff;
+  --secondary: #222734;
+  --secondary-foreground: #d7dae0;
+  --muted: #181c25;
+  --muted-foreground: #8a93a3;
+  --accent: #1b2232;
+  --accent-foreground: #ffffff;
+  --destructive: #5b1d27;
+  --destructive-foreground: #ffd0d6;
+  --danger: #ff9aa5;
+  --danger-soft: #2a1a1f;
+  --success: #7fd39a;
+  --success-soft: #1d2d22;
+  --warning: #f0d38a;
+  --warning-soft: #2b2414;
+  --warning-border: #5a4a1c;
+  --border: #262a33;
+  --input: #2f3542;
+  --field: #1a1e27;
+  --ring: #5b8cff;
+  --tag: #232937;
+  --tag-foreground: #a9b3c6;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-bar: var(--bar);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-warning-border: var(--warning-border);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-field: var(--field);
+  --color-ring: var(--ring);
+  --color-tag: var(--tag);
+  --color-tag-foreground: var(--tag-foreground);
+  --radius-sm: calc(var(--radius) - 3px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+@layer base {
+  * { border-color: var(--border); }
+  html, body, #root { height: 100%; }
+  body {
+    margin: 0;
+    background: var(--background);
+    color: var(--foreground);
+    font: 13px/1.4 var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+  }
+  :focus-visible { outline: 2px solid var(--ring); outline-offset: 1px; }
+}
+
+/* Keep advice tints: a ~7% fill and a 3px left edge at ~55%; the reason text is a muted tint colour. */
+:root {
+  --tint-green: #1c7c40;
+  --tint-yellow: #9a6a00;
+  --tint-red: #b4233a;
+  --tint-green-text: #2d6b45;
+  --tint-yellow-text: #7a5710;
+  --tint-red-text: #9a3041;
+}
+.dark {
+  --tint-green: #7fd39a;
+  --tint-yellow: #f0d38a;
+  --tint-red: #ff9aa5;
+  --tint-green-text: #8fc7a2;
+  --tint-yellow-text: #d6c08a;
+  --tint-red-text: #e4a0a8;
+}
+tr[data-tint] > td:first-child { box-shadow: inset 3px 0 0 var(--tint-edge); }
+tr[data-tint][data-checked='false'] { background: var(--tint-fill); }
+tr[data-tint='green'] { --tint-edge: color-mix(in srgb, var(--tint-green) 55%, transparent); --tint-fill: color-mix(in srgb, var(--tint-green) 7%, transparent); }
+tr[data-tint='yellow'] { --tint-edge: color-mix(in srgb, var(--tint-yellow) 55%, transparent); --tint-fill: color-mix(in srgb, var(--tint-yellow) 7%, transparent); }
+tr[data-tint='red'] { --tint-edge: color-mix(in srgb, var(--tint-red) 55%, transparent); --tint-fill: color-mix(in srgb, var(--tint-red) 7%, transparent); }

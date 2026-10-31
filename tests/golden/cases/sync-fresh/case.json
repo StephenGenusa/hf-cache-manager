@@ -1,0 +1,194 @@
+{
+  "repos": [
+    {
+      "id": "acme/Tiny-GGUF",
+      "main": "c2",
+      "snapshots": [
+        {
+          "commit": "c2",
+          "mtime": 20,
+          "files": [
+            {
+              "path": "Tiny-UD-Q4_K_XL.gguf",
+              "gguf": {
+                "arch": "llama",
+                "fileType": 15,
+                "tensors": [
+                  [
+                    8,
+                    8
+                  ]
+                ]
+              }
+            },
+            {
+              "path": "Tiny-IQ4_XS.gguf",
+              "gguf": {
+                "arch": "llama",
+                "fileType": 30,
+                "tensors": [
+                  [
+                    8,
+                    16
+                  ]
+                ]
+              }
+            },
+            {
+              "path": "Tiny-BF16.gguf",
+              "gguf": {
+                "arch": "llama",
+                "fileType": 32,
+                "tensors": [
+                  [
+                    16,
+                    16
+                  ]
+                ]
+              }
+            },
+            {
+              "path": "Tiny-MXFP4.gguf",
+              "gguf": {
+                "arch": "llama",
+                "fileType": 38,
+                "tensors": [
+                  [
+                    16,
+                    32
+                  ]
+                ]
+              }
+            },
+            {
+              "path": "Tiny-Q8_0-00001-of-00002.gguf",
+              "text": "shard one"
+            },
+            {
+              "path": "Tiny-Q8_0-00002-of-00002.gguf",
+              "text": "shard two"
+            },
+            {
+              "path": "mmproj-F16.gguf",
+              "text": "projector f16"
+            },
+            {
+              "path": "mmproj-BF16.gguf",
+              "text": "projector bf16"
+            },
+            {
+              "path": "MTP/Tiny-draft-Q4_0.gguf",
+              "gguf": {
+                "arch": "llama",
+                "fileType": 2,
+                "tensors": [
+                  [
+                    4,
+                    4
+                  ]
+                ]
+              }
+            },
+            {
+              "path": "Tiny-Q4_K_M.gguf",
+              "gguf": {
+                "arch": "llama",
+                "fileType": 15,
+                "tensors": [
+                  [
+                    2,
+                    2
+                  ]
+                ]
+              }
+            },
+            {
+              "path": "Tiny-Q6_K.gguf",
+              "text": "q6 new, blob missing",
+              "dangling": true
+            }
+          ]
+        },
+        {
+          "commit": "c1",
+          "mtime": 10,
+          "files": [
+            {
+              "path": "Tiny-Q6_K.gguf",
+              "gguf": {
+                "arch": "llama",
+                "fileType": 18,
+                "tensors": [
+                  [
+                    6,
+                    6
+                  ]
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "other/Small-GGUF",
+      "main": "s1",
+      "snapshots": [
+        {
+          "commit": "s1",
+          "mtime": 5,
+          "files": [
+            {
+              "path": "Small-Q4_K_M.gguf",
+              "gguf": {
+                "arch": "llama",
+                "fileType": 15,
+                "tensors": [
+                  [
+                    3,
+                    3
+                  ]
+                ]
+              }
+            },
+            {
+              "path": "Small-Q8_0.gguf",
+              "gguf": {
+                "arch": "llama",
+                "fileType": 7,
+                "tensors": [
+                  [
+                    3,
+                    6
+                  ]
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "views": [
+    "lmstudio",
+    "ollama"
+  ],
+  "aliases": {
+    "tiny": "acme/Tiny-GGUF:Tiny-Q4_K_M.gguf",
+    "taken": "acme/Tiny-GGUF:Tiny-UD-Q4_K_XL.gguf"
+  },
+  "viewFiles": {
+    "ollama": {
+      ".hfhub-registry/acme/Tiny-GGUF/Tiny-UD-Q4_K_XL.gguf.json": "{\"missing\": true}",
+      ".hfhub-registry/acme/Tiny-GGUF/Tiny-IQ4_XS.gguf.json": "{\"missing\": true}",
+      ".hfhub-registry/acme/Tiny-GGUF/Tiny-BF16.gguf.json": "{\"missing\": true}",
+      ".hfhub-registry/acme/Tiny-GGUF/Tiny-MXFP4.gguf.json": "{\"missing\": true}",
+      ".hfhub-registry/acme/Tiny-GGUF/Tiny-draft-Q4_0.gguf.json": "{\"missing\": true}",
+      ".hfhub-registry/acme/Tiny-GGUF/Tiny-Q4_K_M.gguf.json": "{\"missing\": true}",
+      ".hfhub-registry/acme/Tiny-GGUF/Tiny-Q6_K.gguf.json": "{\"missing\": true}",
+      ".hfhub-registry/other/Small-GGUF/Small-Q4_K_M.gguf.json": "{\"missing\": true}",
+      ".hfhub-registry/other/Small-GGUF/Small-Q8_0.gguf.json": "{\"missing\": true}",
+      "manifests/registry.ollama.ai/library/taken/latest": "{\"schemaVersion\":2,\"mediaType\":\"application/vnd.docker.distribution.manifest.v2+json\",\"layers\":[{\"mediaType\":\"application/vnd.ollama.image.model\",\"digest\":\"sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"size\":1}]}"
+    }
+  }
+}

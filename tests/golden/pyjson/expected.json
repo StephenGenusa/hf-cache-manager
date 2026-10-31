@@ -1,0 +1,78 @@
+{
+ "json": [
+  {
+   "indent1": "{}",
+   "compact": "{}",
+   "default": "{}"
+  },
+  {
+   "indent1": "[]",
+   "compact": "[]",
+   "default": "[]"
+  },
+  {
+   "indent1": "null",
+   "compact": "null",
+   "default": "null"
+  },
+  {
+   "indent1": "true",
+   "compact": "true",
+   "default": "true"
+  },
+  {
+   "indent1": "[\n 1,\n 2.0,\n -0.0,\n 1e+22,\n 1e-07,\n 0.1,\n 123456789012345678901234567890,\n 1.5e+300,\n 100.0,\n 1e+16,\n 1000000000000000.0,\n 12345.678\n]",
+   "compact": "[1,2.0,-0.0,1e+22,1e-07,0.1,123456789012345678901234567890,1.5e+300,100.0,1e+16,1000000000000000.0,12345.678]",
+   "default": "[1, 2.0, -0.0, 1e+22, 1e-07, 0.1, 123456789012345678901234567890, 1.5e+300, 100.0, 1e+16, 1000000000000000.0, 12345.678]"
+  },
+  {
+   "indent1": "{\n \"b\": 1,\n \"a\": 2,\n \"10\": 3,\n \"2\": 4,\n \"\": 5\n}",
+   "compact": "{\"b\":1,\"a\":2,\"10\":3,\"2\":4,\"\":5}",
+   "default": "{\"b\": 1, \"a\": 2, \"10\": 3, \"2\": 4, \"\": 5}"
+  },
+  {
+   "indent1": "{\n \"z\": {\n  \"y\": [\n   1,\n   {\n    \"x\": null\n   },\n   []\n  ],\n  \"w\": {}\n },\n \"k\": [\n  [],\n  [\n   []\n  ],\n  {}\n ]\n}",
+   "compact": "{\"z\":{\"y\":[1,{\"x\":null},[]],\"w\":{}},\"k\":[[],[[]],{}]}",
+   "default": "{\"z\": {\"y\": [1, {\"x\": null}, []], \"w\": {}}, \"k\": [[], [[]], {}]}"
+  },
+  {
+   "indent1": "\"caf\\u00e9 \\u65e5\\u672c \\ud83d\\ude00 \\u0000 \\u001f \\u007f\"",
+   "compact": "\"caf\\u00e9 \\u65e5\\u672c \\ud83d\\ude00 \\u0000 \\u001f \\u007f\"",
+   "default": "\"caf\\u00e9 \\u65e5\\u672c \\ud83d\\ude00 \\u0000 \\u001f \\u007f\""
+  },
+  {
+   "indent1": "[\n \"tab\\t\",\n \"nl\\n\",\n \"cr\\r\",\n \"q\\\"\",\n \"bs\\\\\",\n \"slash/\",\n \"\\b\\f\"\n]",
+   "compact": "[\"tab\\t\",\"nl\\n\",\"cr\\r\",\"q\\\"\",\"bs\\\\\",\"slash/\",\"\\b\\f\"]",
+   "default": "[\"tab\\t\", \"nl\\n\", \"cr\\r\", \"q\\\"\", \"bs\\\\\", \"slash/\", \"\\b\\f\"]"
+  },
+  {
+   "indent1": "{\n \"version\": 1,\n \"owned\": {\n  \"acme/Tiny-GGUF:Tiny-Q4_K_M.gguf\": {\n   \"paths\": [\n    \"acme/Tiny-GGUF/Tiny-Q4_K_M.gguf\"\n   ],\n   \"sha256\": \"0123\"\n  }\n },\n \"tombstones\": {}\n}",
+   "compact": "{\"version\":1,\"owned\":{\"acme/Tiny-GGUF:Tiny-Q4_K_M.gguf\":{\"paths\":[\"acme/Tiny-GGUF/Tiny-Q4_K_M.gguf\"],\"sha256\":\"0123\"}},\"tombstones\":{}}",
+   "default": "{\"version\": 1, \"owned\": {\"acme/Tiny-GGUF:Tiny-Q4_K_M.gguf\": {\"paths\": [\"acme/Tiny-GGUF/Tiny-Q4_K_M.gguf\"], \"sha256\": \"0123\"}}, \"tombstones\": {}}"
+  },
+  {
+   "indent1": "{\n \"\\u00e9\": 1,\n \"e\": 2,\n \"\\ud83d\\ude00\": 3,\n \"\\uffff\": 4\n}",
+   "compact": "{\"\\u00e9\":1,\"e\":2,\"\\ud83d\\ude00\":3,\"\\uffff\":4}",
+   "default": "{\"\\u00e9\": 1, \"e\": 2, \"\\ud83d\\ude00\": 3, \"\\uffff\": 4}"
+  },
+  {
+   "indent1": "[\n true,\n false,\n null,\n 0,\n -1,\n 9007199254740993,\n 0.30000000000000004\n]",
+   "compact": "[true,false,null,0,-1,9007199254740993,0.30000000000000004]",
+   "default": "[true, false, null, 0, -1, 9007199254740993, 0.30000000000000004]"
+  }
+ ],
+ "quote": [
+  "",
+  "plain",
+  "hello%20world",
+  "a%2Fb%2Fc",
+  "~-._",
+  "100%25",
+  "a%2Bb%3Dc%26d",
+  "caf%C3%A9",
+  "%E6%97%A5%E6%9C%AC%E8%AA%9E",
+  "emoji%20%F0%9F%98%80",
+  "UD-Q4_K_XL.gguf",
+  "name%20with%20%27quotes%27%20and%20%28parens%29%21%2A"
+ ]
+}

@@ -1,0 +1,20 @@
+{
+ "version": 1,
+ "owned": {
+  "acme/Tiny-GGUF:Tiny-Q4_K_M.gguf": {
+   "paths": [
+    "acme/Tiny-GGUF/Tiny-Q4_K_M.gguf",
+    "acme/Tiny-GGUF/mmproj-F16.gguf"
+   ],
+   "sha256": "ed8ae732cd46a67765785577ffd2f5cf99fe73cc6dd577ad75b87643ee50c659"
+  },
+  "acme/Tiny-GGUF:Tiny-Q8_0.gguf": {
+   "paths": [
+    "acme/Tiny-GGUF/Tiny-Q8_0.gguf",
+    "acme/Tiny-GGUF/mmproj-F16.gguf"
+   ],
+   "sha256": "5b9181c1b5256950b40d71ba1690979c186b21ebf7f80f20bea5cac2358a7fc5"
+  }
+ },
+ "tombstones": {}
+}

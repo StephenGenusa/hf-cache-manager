@@ -1,0 +1,50 @@
+[
+  {
+    "id": "file-part:shard",
+    "kind": "file-part",
+    "title": "Split file part",
+    "text": "One part of a file split into several. Download all parts and point the tool at the first one.",
+    "section": "file-name-parts",
+    "patterns": ["\\d{5}-of-\\d{5}", "\\d+-of-\\d+"]
+  },
+  {
+    "id": "quant-type:k-mix",
+    "kind": "quant-type",
+    "title": "K-quant mix size",
+    "text": "_S, _M and _L are small, medium and large mixes of the same base type. A bigger mix gives more bits to the tensors that hurt quality most when rounded. Q3_K, Q4_K and Q5_K alone are aliases for the _M versions.",
+    "section": "32-k-quants-_k",
+    "patterns": ["Q\\d_K_[SML]", "Q\\d_K"]
+  },
+  {
+    "id": "size:effective",
+    "kind": "size",
+    "title": "Effective parameters",
+    "text": "Google Gemma effective parameters. The file is bigger than the number suggests because of the large per-layer embedding tables.",
+    "section": "size-and-architecture-tags",
+    "patterns": ["E\\d+B"]
+  },
+  {
+    "id": "size:moe",
+    "kind": "size",
+    "title": "Mixture of experts size",
+    "text": "Total parameters, then the parameters active per token. You need memory for the total. Speed follows the active number.",
+    "section": "size-and-architecture-tags",
+    "patterns": ["\\d+(?:\\.\\d+)?B-A\\d+(?:\\.\\d+)?B"]
+  },
+  {
+    "id": "size:params",
+    "kind": "size",
+    "title": "Parameter count",
+    "text": "Billions of parameters. Memory for weights is about this number times bits per weight divided by 8, in GB.",
+    "section": "size-and-architecture-tags",
+    "patterns": ["\\d+(?:\\.\\d+)?B"]
+  },
+  {
+    "id": "quant-type:xl-mix",
+    "kind": "quant-type",
+    "title": "XL mix size",
+    "text": "_XL is a size label for a larger mix of a K-quant, not a llama.cpp type. With the UD- prefix it is Unsloth's own label, which Unsloth does not define in its docs. On bartowski files (Q3_K_XL, Q6_K_L style) it means the standard quant with the embedding and output weights at Q8_0.",
+    "section": "recipes-that-make-normal-gguf-files",
+    "patterns": ["Q\\d_K_XL"]
+  }
+]

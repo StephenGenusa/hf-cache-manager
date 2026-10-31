@@ -1,0 +1,14 @@
+node_modules/
+out/
+dist/
+release/
+coverage/
+reports/
+.stryker-tmp/
+*.log
+test-results/
+playwright-report/
+
+# golden generator leftovers
+tests/golden/cases/*/expected.prev-*
+tests/golden/cases/*/.expected.staging*

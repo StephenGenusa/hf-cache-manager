@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4a72e8"/>
+      <stop offset="1" stop-color="#2a45a6"/>
+    </linearGradient>
+    <linearGradient id="slab" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#dbe4ff"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="1024" height="1024" rx="225" fill="url(#tile)"/>
+  <!-- three stacked cache layers -->
+  <g fill="url(#slab)">
+    <path d="M232 640 h560 a40 40 0 0 1 40 40 v64 a40 40 0 0 1 -40 40 h-560 a40 40 0 0 1 -40 -40 v-64 a40 40 0 0 1 40 -40 z"/>
+    <path d="M232 488 h560 a40 40 0 0 1 40 40 v64 a40 40 0 0 1 -40 40 h-560 a40 40 0 0 1 -40 -40 v-64 a40 40 0 0 1 40 -40 z" opacity="0.92"/>
+    <path d="M232 336 h400 a40 40 0 0 1 40 40 v64 a40 40 0 0 1 -40 40 h-400 a40 40 0 0 1 -40 -40 v-64 a40 40 0 0 1 40 -40 z" opacity="0.84"/>
+  </g>
+  <!-- status lights on the layers: keep, keep, review -->
+  <circle cx="752" cy="712" r="22" fill="#2fb36d"/>
+  <circle cx="752" cy="560" r="22" fill="#2fb36d"/>
+  <!-- a model arriving: down arrow above the open slot -->
+  <path d="M752 196 v150" stroke="#ffffff" stroke-width="56" stroke-linecap="round" fill="none"/>
+  <path d="M682 300 L752 372 L822 300" stroke="#ffffff" stroke-width="56" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+</svg>

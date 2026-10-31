@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "composite": true,
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "verbatimModuleSyntax": true,
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "target": "ES2023",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
+    "types": ["@testing-library/jest-dom"],
+    "noEmit": true,
+    "skipLibCheck": true,
+    "tsBuildInfoFile": "node_modules/.tmp/tsconfig.web.tsbuildinfo"
+  },
+  "include": ["src/renderer/**/*", "src/shared/**/*", "src/core/types.ts", "src/core/advice/profile.ts", "tests/renderer/**/*"]
+}

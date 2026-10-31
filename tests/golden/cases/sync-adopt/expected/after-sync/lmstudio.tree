@@ -1,0 +1,9 @@
+.hfhub-state.json	F	667	0c71233ad48589c96205d87051905e4ee76faa58e5cae99d2acfc76949b4812f
+acme	D
+acme/Tiny-GGUF	D
+acme/Tiny-GGUF/Tiny-Q4_K_M.gguf	L	@HUB@/models--acme--Tiny-GGUF/blobs/ed8ae732cd46a67765785577ffd2f5cf99fe73cc6dd577ad75b87643ee50c659
+acme/Tiny-GGUF/Tiny-Q8_0.gguf	L	@HUB@/models--acme--Tiny-GGUF/blobs/5b9181c1b5256950b40d71ba1690979c186b21ebf7f80f20bea5cac2358a7fc5
+acme/Tiny-GGUF/mmproj-F16.gguf	L	@HUB@/models--acme--Tiny-GGUF/blobs/bde49e7596b8b16f0b2c3dbff451d9f721402623bb8c10c905a2214ab4031b55
+other	D
+other/Keep-GGUF	D
+other/Keep-GGUF/Keep-Q8_0.gguf	L	@HUB@/models--other--Keep-GGUF/blobs/7ac9f7daa6550f58021d4c130b9df3003fa694100e5b0326efd22eedc16e43ec

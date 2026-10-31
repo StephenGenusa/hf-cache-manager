@@ -1,0 +1,50 @@
+appId: com.genusa.hf-cache-manager
+productName: HF Cache Manager
+directories:
+  buildResources: build
+  output: dist
+files:
+  # An allowlist: electron-builder keeps its default `**/*` unless a positive pattern is given, so only what the app
+  # needs is named and nothing else in the working tree (tests, reports, docs, fixtures) can be packed by omission.
+  # Renderer packages are bundled into out/ by Vite; node_modules carries only the main process's runtime
+  # dependencies (package.json `dependencies`: zod and smol-toml).
+  - 'out/**'
+  - 'package.json'
+  - 'node_modules/**'
+  - '!**/*.map'
+  - '!**/*.log'
+asarUnpack:
+  # The scan runs in a worker_threads Worker started from out/main/scan-worker.js (src/main/scan-client.ts).
+  - out/main/**
+win:
+  executableName: HFCacheManager
+  icon: build/icon.png
+  target:
+    - nsis
+nsis:
+  artifactName: ${name}-${version}-setup.${ext}
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  shortcutName: ${productName}
+  uninstallDisplayName: ${productName}
+  createDesktopShortcut: always
+# No `target` here: scripts/build/build-macos.sh (on a Mac) asks for dmg and zip, x64 and arm64; npm run build:mac
+# (cross-built on Linux) makes an unsigned x64 zip.
+mac:
+  icon: build/icon.png
+  artifactName: ${name}-${version}-mac-${arch}.${ext}
+  category: public.app-category.developer-tools
+linux:
+  icon: build/icon.png
+  executableName: hf-cache-manager
+  syncDesktopName: true
+  target:
+    - AppImage
+  maintainer: Stephen Genusa
+  category: Development
+appImage:
+  artifactName: ${name}-${version}.${ext}
+npmRebuild: false
+# Explicitly null: with no `publish` key electron-builder infers a GitHub provider from the git remote and writes an
+# app-update.yml into the package. The app has no updater; releases are uploaded by hand.
+publish: null

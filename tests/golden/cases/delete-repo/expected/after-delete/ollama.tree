@@ -1,0 +1,17 @@
+.hfhub-registry	D
+.hfhub-registry/acme	D
+.hfhub-registry/acme/Tiny-GGUF	D
+.hfhub-registry/acme/Tiny-GGUF/Tiny-Q4_K_M.gguf.json	F	17	60e6674506d21a48a5c7d04eadd96d4695471930b168324066b027e8f32f2596
+.hfhub-registry/acme/Tiny-GGUF/Tiny-Q8_0.gguf.json	F	17	60e6674506d21a48a5c7d04eadd96d4695471930b168324066b027e8f32f2596
+.hfhub-registry/other	D
+.hfhub-registry/other/Keep-GGUF	D
+.hfhub-registry/other/Keep-GGUF/Keep-Q8_0.gguf.json	F	17	60e6674506d21a48a5c7d04eadd96d4695471930b168324066b027e8f32f2596
+.hfhub-state.json	F	407	c63476df81713ed69d193b79445a88469a8de85356eb2e2f776ba77982459fad
+blobs	D
+blobs/sha256-7ac9f7daa6550f58021d4c130b9df3003fa694100e5b0326efd22eedc16e43ec	L	@HUB@/models--other--Keep-GGUF/blobs/7ac9f7daa6550f58021d4c130b9df3003fa694100e5b0326efd22eedc16e43ec
+blobs/sha256-ca2af85e88f41492a36188085e2fea133fb7a1312da73b9fc69abd3021156e58	F	262	ca2af85e88f41492a36188085e2fea133fb7a1312da73b9fc69abd3021156e58
+manifests	D
+manifests/hf.co	D
+manifests/hf.co/other	D
+manifests/hf.co/other/Keep-GGUF	D
+manifests/hf.co/other/Keep-GGUF/Q8_0	F	408	6df9f358b394449a567574bc3b33f2adcf459e1abd16533faf2a0668fe507edd

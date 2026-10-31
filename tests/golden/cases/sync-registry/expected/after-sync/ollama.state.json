@@ -1,0 +1,27 @@
+{
+ "version": 1,
+ "owned": {
+  "acme/Tiny-GGUF:Tiny-Q4_K_M.gguf": {
+   "paths": [
+    "blobs/sha256-b507b9c2f6ca642bffcd06665ea7c91f235fd32daeefdf875a0f938db05fb315",
+    "blobs/sha256-bde49e7596b8b16f0b2c3dbff451d9f721402623bb8c10c905a2214ab4031b55",
+    "blobs/sha256-c728f03f3c182c020ac90bd8ac72455230037f8242f4bed1080be9f5d2ad3ea8",
+    "blobs/sha256-ed8ae732cd46a67765785577ffd2f5cf99fe73cc6dd577ad75b87643ee50c659",
+    "blobs/sha256-f4128db47e7772823cabed725b95d3da7c8375f852865aad92acbec92dee6427",
+    "manifests/hf.co/acme/Tiny-GGUF/Q4_K_M",
+    "manifests/registry.ollama.ai/library/tiny/latest"
+   ],
+   "sha256": "ed8ae732cd46a67765785577ffd2f5cf99fe73cc6dd577ad75b87643ee50c659"
+  },
+  "acme/Tiny-GGUF:Tiny-Q8_0.gguf": {
+   "paths": [
+    "blobs/sha256-3a506ceda4055b797db33a6b0c4bb52d44a2e68c4ea7e57c40f685ac91841cf4",
+    "blobs/sha256-5b9181c1b5256950b40d71ba1690979c186b21ebf7f80f20bea5cac2358a7fc5",
+    "blobs/sha256-bde49e7596b8b16f0b2c3dbff451d9f721402623bb8c10c905a2214ab4031b55",
+    "manifests/hf.co/acme/Tiny-GGUF/Q8_0"
+   ],
+   "sha256": "5b9181c1b5256950b40d71ba1690979c186b21ebf7f80f20bea5cac2358a7fc5"
+  }
+ },
+ "tombstones": {}
+}

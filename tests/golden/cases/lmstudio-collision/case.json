@@ -1,0 +1,35 @@
+{
+  "repos": [
+    {
+      "id": "acme/Tiny-GGUF",
+      "main": "c1",
+      "snapshots": [
+        {
+          "commit": "c1",
+          "mtime": 10,
+          "files": [
+            {
+              "path": "Tiny-Q4_K_M.gguf",
+              "text": "q4 at the root"
+            },
+            {
+              "path": "alt/Tiny-Q4_K_M.gguf",
+              "text": "q4 in a subfolder"
+            },
+            {
+              "path": "Tiny-Q8_0.gguf",
+              "text": "q8"
+            },
+            {
+              "path": "mmproj-F16.gguf",
+              "text": "projector f16"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "views": [
+    "lmstudio"
+  ]
+}

@@ -1,0 +1,14 @@
+{
+ "version": 1,
+ "owned": {
+  "other/Keep-GGUF:Keep-Q8_0.gguf": {
+   "paths": [
+    "blobs/sha256-7ac9f7daa6550f58021d4c130b9df3003fa694100e5b0326efd22eedc16e43ec",
+    "blobs/sha256-ca2af85e88f41492a36188085e2fea133fb7a1312da73b9fc69abd3021156e58",
+    "manifests/hf.co/other/Keep-GGUF/Q8_0"
+   ],
+   "sha256": "7ac9f7daa6550f58021d4c130b9df3003fa694100e5b0326efd22eedc16e43ec"
+  }
+ },
+ "tombstones": {}
+}

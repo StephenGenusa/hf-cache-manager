@@ -1,0 +1,30 @@
+.hfhub-registry	D
+.hfhub-registry/acme	D
+.hfhub-registry/acme/Tiny-GGUF	D
+.hfhub-registry/acme/Tiny-GGUF/Tiny-Q4_K_M.gguf.json	F	17	60e6674506d21a48a5c7d04eadd96d4695471930b168324066b027e8f32f2596
+.hfhub-registry/acme/Tiny-GGUF/Tiny-Q8_0.gguf.json	F	17	60e6674506d21a48a5c7d04eadd96d4695471930b168324066b027e8f32f2596
+.hfhub-registry/other	D
+.hfhub-registry/other/Keep-GGUF	D
+.hfhub-registry/other/Keep-GGUF/Keep-Q8_0.gguf.json	F	17	60e6674506d21a48a5c7d04eadd96d4695471930b168324066b027e8f32f2596
+.hfhub-state.json	F	1345	b9460d89d024054cae0144e49ac27bc95213dd3e9ac63b8b3e27642ecd749836
+blobs	D
+blobs/sha256-3a506ceda4055b797db33a6b0c4bb52d44a2e68c4ea7e57c40f685ac91841cf4	F	336	3a506ceda4055b797db33a6b0c4bb52d44a2e68c4ea7e57c40f685ac91841cf4
+blobs/sha256-5b9181c1b5256950b40d71ba1690979c186b21ebf7f80f20bea5cac2358a7fc5	L	@HUB@/models--acme--Tiny-GGUF/blobs/5b9181c1b5256950b40d71ba1690979c186b21ebf7f80f20bea5cac2358a7fc5
+blobs/sha256-7ac9f7daa6550f58021d4c130b9df3003fa694100e5b0326efd22eedc16e43ec	L	@HUB@/models--other--Keep-GGUF/blobs/7ac9f7daa6550f58021d4c130b9df3003fa694100e5b0326efd22eedc16e43ec
+blobs/sha256-95a3bb2bad263cd4c401bbf0daf0dd671615e049273d4aa292f5242fe6d88b8a	F	338	95a3bb2bad263cd4c401bbf0daf0dd671615e049273d4aa292f5242fe6d88b8a
+blobs/sha256-bde49e7596b8b16f0b2c3dbff451d9f721402623bb8c10c905a2214ab4031b55	L	@HUB@/models--acme--Tiny-GGUF/blobs/bde49e7596b8b16f0b2c3dbff451d9f721402623bb8c10c905a2214ab4031b55
+blobs/sha256-ca2af85e88f41492a36188085e2fea133fb7a1312da73b9fc69abd3021156e58	F	262	ca2af85e88f41492a36188085e2fea133fb7a1312da73b9fc69abd3021156e58
+blobs/sha256-ed8ae732cd46a67765785577ffd2f5cf99fe73cc6dd577ad75b87643ee50c659	L	@HUB@/models--acme--Tiny-GGUF/blobs/ed8ae732cd46a67765785577ffd2f5cf99fe73cc6dd577ad75b87643ee50c659
+manifests	D
+manifests/hf.co	D
+manifests/hf.co/acme	D
+manifests/hf.co/acme/Tiny-GGUF	D
+manifests/hf.co/acme/Tiny-GGUF/Q4_K_M	F	556	cf3326a0efbbc40fd7a267cef204806ab30720e65ed1d02ecf55c2282d841bdd
+manifests/hf.co/acme/Tiny-GGUF/Q8_0	F	556	15466e52ac423ad685f964ba0fb52c86d6ba52a4d7579fb0666bbc942764bd84
+manifests/hf.co/other	D
+manifests/hf.co/other/Keep-GGUF	D
+manifests/hf.co/other/Keep-GGUF/Q8_0	F	408	6df9f358b394449a567574bc3b33f2adcf459e1abd16533faf2a0668fe507edd
+manifests/registry.ollama.ai	D
+manifests/registry.ollama.ai/library	D
+manifests/registry.ollama.ai/library/tiny	D
+manifests/registry.ollama.ai/library/tiny/latest	F	556	cf3326a0efbbc40fd7a267cef204806ab30720e65ed1d02ecf55c2282d841bdd

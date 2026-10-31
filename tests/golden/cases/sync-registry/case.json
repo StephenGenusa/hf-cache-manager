@@ -1,0 +1,62 @@
+{
+  "repos": [
+    {
+      "id": "acme/Tiny-GGUF",
+      "main": "c1",
+      "snapshots": [
+        {
+          "commit": "c1",
+          "mtime": 10,
+          "files": [
+            {
+              "path": "Tiny-Q4_K_M.gguf",
+              "gguf": {
+                "arch": "llama",
+                "fileType": 15,
+                "tensors": [
+                  [
+                    2,
+                    2
+                  ]
+                ]
+              }
+            },
+            {
+              "path": "Tiny-Q8_0.gguf",
+              "gguf": {
+                "arch": "llama",
+                "fileType": 7,
+                "tensors": [
+                  [
+                    2,
+                    4
+                  ]
+                ]
+              }
+            },
+            {
+              "path": "mmproj-F16.gguf",
+              "text": "projector f16"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "views": [
+    "lmstudio",
+    "ollama"
+  ],
+  "aliases": {
+    "tiny": "acme/Tiny-GGUF:Tiny-Q4_K_M.gguf"
+  },
+  "viewFiles": {
+    "ollama": {
+      ".hfhub-registry/acme/Tiny-GGUF/Tiny-Q4_K_M.gguf.json": "{\"schemaVersion\": 2, \"mediaType\": \"application/vnd.docker.distribution.manifest.v2+json\", \"config\": {\"digest\": \"sha256:91fe28fa55bd0bb990d289e091698c1ed8c2cd0cedd25a12485e06d30f1a4746\", \"mediaType\": \"application/vnd.docker.container.image.v1+json\", \"size\": 36}, \"layers\": [{\"mediaType\": \"application/vnd.ollama.image.model\", \"digest\": \"sha256:9999999999999999999999999999999999999999999999999999999999999999\", \"size\": 1}, {\"mediaType\": \"application/vnd.ollama.image.template\", \"digest\": \"sha256:b507b9c2f6ca642bffcd06665ea7c91f235fd32daeefdf875a0f938db05fb315\", \"size\": 13}, {\"mediaType\": \"application/vnd.ollama.image.params\", \"digest\": \"sha256:f4128db47e7772823cabed725b95d3da7c8375f852865aad92acbec92dee6427\", \"size\": 19}]}",
+      ".hfhub-registry/acme/Tiny-GGUF/Tiny-Q4_K_M.gguf.config.json": "{\"model_format\": \"gguf\", \"extra\": 1}",
+      "blobs/sha256-b507b9c2f6ca642bffcd06665ea7c91f235fd32daeefdf875a0f938db05fb315": "{{ .Prompt }}",
+      "blobs/sha256-f4128db47e7772823cabed725b95d3da7c8375f852865aad92acbec92dee6427": "{\"stop\": [\"<end>\"]}",
+      ".hfhub-registry/acme/Tiny-GGUF/Tiny-Q8_0.gguf.json": "{\"missing\": true}"
+    }
+  }
+}

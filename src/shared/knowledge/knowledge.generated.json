@@ -1,0 +1,1994 @@
+{
+  "checkedOn": "2026-10-25",
+  "entries": [
+    {
+      "id": "file-part:Model-Q4_K_M.gguf",
+      "kind": "file-part",
+      "tokens": [
+        "Model-Q4_K_M.gguf"
+      ],
+      "patterns": [],
+      "title": "Model-Q4_K_M.gguf: Standard llama.cpp K-quant, about 4 bits, medium mix",
+      "text": "Standard llama.cpp K-quant, about 4 bits, medium mix.",
+      "section": "file-name-parts"
+    },
+    {
+      "id": "file-part:Model-UD-Q4_K_XL.gguf",
+      "kind": "file-part",
+      "tokens": [
+        "Model-UD-Q4_K_XL.gguf"
+      ],
+      "patterns": [],
+      "title": "Model-UD-Q4_K_XL.gguf: Unsloth Dynamic recipe",
+      "text": "Unsloth Dynamic recipe. XL is Unsloth's label for a larger mix.",
+      "section": "file-name-parts"
+    },
+    {
+      "id": "file-part:Model-Q4_K_L.gguf",
+      "kind": "file-part",
+      "tokens": [
+        "Model-Q4_K_L.gguf"
+      ],
+      "patterns": [],
+      "title": "Model-Q4_K_L.gguf: Q4_K_M with the embedding and output weights at Q8_0",
+      "text": "Q4_K_M with the embedding and output weights at Q8_0.",
+      "section": "file-name-parts"
+    },
+    {
+      "id": "file-part:Model.i1-IQ3_M.gguf",
+      "kind": "file-part",
+      "tokens": [
+        "Model.i1-IQ3_M.gguf"
+      ],
+      "patterns": [],
+      "title": "Model.i1-IQ3_M.gguf: Quant made with an importance matrix (\"i1\")",
+      "text": "Quant made with an importance matrix (\"i1\").",
+      "section": "file-name-parts"
+    },
+    {
+      "id": "file-part:Model-Q8_0-00001-of-00003.gguf",
+      "kind": "file-part",
+      "tokens": [
+        "Model-Q8_0-00001-of-00003.gguf"
+      ],
+      "patterns": [],
+      "title": "Model-Q8_0-00001-of-00003.gguf: One part of a file split into three",
+      "text": "One part of a file split into three. Download all parts and point the tool at the first one.",
+      "section": "file-name-parts"
+    },
+    {
+      "id": "file-part:mmproj-F16.gguf",
+      "kind": "file-part",
+      "tokens": [
+        "mmproj-F16.gguf"
+      ],
+      "patterns": [],
+      "title": "mmproj-F16.gguf: The vision (or audio) projector",
+      "text": "The vision (or audio) projector. You need it for images. Without it the model is text only.",
+      "section": "file-name-parts"
+    },
+    {
+      "id": "file-part:imatrix.gguf",
+      "kind": "file-part",
+      "tokens": [
+        "imatrix.gguf",
+        "imatrix.dat",
+        "imatrix_unsloth.gguf"
+      ],
+      "patterns": [],
+      "title": "imatrix.gguf: The importance matrix used to make the quants",
+      "text": "The importance matrix used to make the quants. You only need it to make your own quants.",
+      "section": "file-name-parts"
+    },
+    {
+      "id": "file-part:MTP/",
+      "kind": "file-part",
+      "tokens": [
+        "MTP/"
+      ],
+      "patterns": [],
+      "title": "MTP/: Multi-token prediction heads or drafters for faster generation",
+      "text": "Multi-token prediction heads or drafters for faster generation. They add memory use.",
+      "section": "file-name-parts"
+    },
+    {
+      "id": "quant-type:Q8_0",
+      "kind": "quant-type",
+      "tokens": [
+        "Q8_0"
+      ],
+      "patterns": [],
+      "title": "Q8_0: Still the standard 8-bit type",
+      "text": "Still the standard 8-bit type. It is the best choice when the model fits.",
+      "section": "31-legacy-quants-_0-and-_1",
+      "verdict": "The same quality as 16-bit for practical use.",
+      "bpw": 8.5
+    },
+    {
+      "id": "quant-type:Q6_K",
+      "kind": "quant-type",
+      "tokens": [
+        "Q6_K"
+      ],
+      "patterns": [],
+      "title": "Q6_K: One type throughout",
+      "text": "One type throughout.",
+      "section": "32-k-quants-_k",
+      "verdict": "Very close to Q8_0.",
+      "bpw": 6.5625
+    },
+    {
+      "id": "quant-type:Q5_K_M",
+      "kind": "quant-type",
+      "tokens": [
+        "Q5_K_M"
+      ],
+      "patterns": [],
+      "title": "Q5_K_M: About half of the sensitive tensors go up to Q6_K",
+      "text": "About half of the sensitive tensors go up to Q6_K.",
+      "section": "32-k-quants-_k",
+      "verdict": "Very good.",
+      "bpw": 5.5
+    },
+    {
+      "id": "quant-type:Q5_K_S",
+      "kind": "quant-type",
+      "tokens": [
+        "Q5_K_S"
+      ],
+      "patterns": [],
+      "title": "Q5_K_S: Q5_K for everything",
+      "text": "Q5_K for everything.",
+      "section": "32-k-quants-_k",
+      "verdict": "Good.",
+      "bpw": 5.5
+    },
+    {
+      "id": "quant-type:Q4_K_M",
+      "kind": "quant-type",
+      "tokens": [
+        "Q4_K_M"
+      ],
+      "patterns": [],
+      "title": "Q4_K_M: About half of the attention value and feed-forward down tensors go up to Q6_K",
+      "text": "About half of the attention value and feed-forward down tensors go up to Q6_K.",
+      "section": "32-k-quants-_k",
+      "verdict": "The usual default.",
+      "bpw": 4.5
+    },
+    {
+      "id": "quant-type:Q4_K_S",
+      "kind": "quant-type",
+      "tokens": [
+        "Q4_K_S"
+      ],
+      "patterns": [],
+      "title": "Q4_K_S: A few early layers go up to Q5_K",
+      "text": "A few early layers go up to Q5_K.",
+      "section": "32-k-quants-_k",
+      "verdict": "Fine when space is tight.",
+      "bpw": 4.5
+    },
+    {
+      "id": "quant-type:Q3_K_L",
+      "kind": "quant-type",
+      "tokens": [
+        "Q3_K_L"
+      ],
+      "patterns": [],
+      "title": "Q3_K_L: More tensors go up to Q5_K",
+      "text": "More tensors go up to Q5_K.",
+      "section": "32-k-quants-_k",
+      "verdict": "Noticeable loss.",
+      "bpw": 3.4375
+    },
+    {
+      "id": "quant-type:Q3_K_M",
+      "kind": "quant-type",
+      "tokens": [
+        "Q3_K_M"
+      ],
+      "patterns": [],
+      "title": "Q3_K_M: Sensitive tensors go up to Q4_K or Q5_K",
+      "text": "Sensitive tensors go up to Q4_K or Q5_K.",
+      "section": "32-k-quants-_k",
+      "verdict": "Noticeable loss.",
+      "bpw": 3.4375
+    },
+    {
+      "id": "quant-type:Q3_K_S",
+      "kind": "quant-type",
+      "tokens": [
+        "Q3_K_S"
+      ],
+      "patterns": [],
+      "title": "Q3_K_S: Q3_K for everything",
+      "text": "Q3_K for everything.",
+      "section": "32-k-quants-_k",
+      "verdict": "Large loss.",
+      "bpw": 3.4375
+    },
+    {
+      "id": "quant-type:Q2_K",
+      "kind": "quant-type",
+      "tokens": [
+        "Q2_K"
+      ],
+      "patterns": [],
+      "title": "Q2_K: Some attention and feed-forward tensors go up to Q3_K or Q4_K",
+      "text": "Some attention and feed-forward tensors go up to Q3_K or Q4_K.",
+      "section": "32-k-quants-_k",
+      "verdict": "Very large loss on an 8B model. Big models handle it better.",
+      "bpw": 2.625
+    },
+    {
+      "id": "quant-type:Q4_0",
+      "kind": "quant-type",
+      "tokens": [
+        "Q4_0"
+      ],
+      "patterns": [],
+      "title": "Q4_0: Lower quality than Q4_K_S at about the same size",
+      "text": "Lower quality than Q4_K_S at about the same size. Google's QAT models are trained for this type, so for those it is the right pick.",
+      "section": "31-legacy-quants-_0-and-_1",
+      "bpw": 4.5
+    },
+    {
+      "id": "quant-type:Q4_1",
+      "kind": "quant-type",
+      "tokens": [
+        "Q4_1"
+      ],
+      "patterns": [],
+      "title": "Q4_1: Larger than Q4_K_M and lower quality",
+      "text": "Larger than Q4_K_M and lower quality.",
+      "section": "31-legacy-quants-_0-and-_1",
+      "bpw": 5
+    },
+    {
+      "id": "quant-type:Q5_0",
+      "kind": "quant-type",
+      "tokens": [
+        "Q5_0"
+      ],
+      "patterns": [],
+      "title": "Q5_0: Replaced by Q5_K",
+      "text": "Replaced by Q5_K.",
+      "section": "31-legacy-quants-_0-and-_1",
+      "bpw": 5.5
+    },
+    {
+      "id": "quant-type:Q5_1",
+      "kind": "quant-type",
+      "tokens": [
+        "Q5_1"
+      ],
+      "patterns": [],
+      "title": "Q5_1: Replaced by Q5_K",
+      "text": "Replaced by Q5_K.",
+      "section": "31-legacy-quants-_0-and-_1",
+      "bpw": 6
+    },
+    {
+      "id": "quant-type:Q2_K_S",
+      "kind": "quant-type",
+      "tokens": [
+        "Q2_K_S"
+      ],
+      "patterns": [],
+      "title": "Q2_K_S: Smaller mix",
+      "text": "Smaller mix. Needs an imatrix.",
+      "section": "32-k-quants-_k",
+      "bpw": 2.625
+    },
+    {
+      "id": "quant-type:IQ1_S",
+      "kind": "quant-type",
+      "tokens": [
+        "IQ1_S"
+      ],
+      "patterns": [],
+      "title": "IQ1_S: Last resort for very large models",
+      "text": "Last resort for very large models.",
+      "section": "33-i-quants-iq",
+      "bpw": 1.5625
+    },
+    {
+      "id": "quant-type:IQ1_M",
+      "kind": "quant-type",
+      "tokens": [
+        "IQ1_M"
+      ],
+      "patterns": [],
+      "title": "IQ1_M: No fast CUDA matrix kernel",
+      "text": "No fast CUDA matrix kernel. Expect slow prompt processing.",
+      "section": "33-i-quants-iq",
+      "bpw": 1.75
+    },
+    {
+      "id": "quant-type:IQ2_XXS",
+      "kind": "quant-type",
+      "tokens": [
+        "IQ2_XXS"
+      ],
+      "patterns": [],
+      "title": "IQ2_XXS: bpw: 2.0625",
+      "text": "bpw: 2.0625. Needs imatrix: Yes.",
+      "section": "33-i-quants-iq",
+      "bpw": 2.0625
+    },
+    {
+      "id": "quant-type:IQ2_XS",
+      "kind": "quant-type",
+      "tokens": [
+        "IQ2_XS"
+      ],
+      "patterns": [],
+      "title": "IQ2_XS: bpw: 2.3125",
+      "text": "bpw: 2.3125. Needs imatrix: Yes.",
+      "section": "33-i-quants-iq",
+      "bpw": 2.3125
+    },
+    {
+      "id": "quant-type:IQ2_S",
+      "kind": "quant-type",
+      "tokens": [
+        "IQ2_S"
+      ],
+      "patterns": [],
+      "title": "IQ2_S: bpw: 2.5625",
+      "text": "bpw: 2.5625. Needs imatrix: Yes.",
+      "section": "33-i-quants-iq",
+      "bpw": 2.5625
+    },
+    {
+      "id": "quant-type:IQ2_M",
+      "kind": "quant-type",
+      "tokens": [
+        "IQ2_M"
+      ],
+      "patterns": [],
+      "title": "IQ2_M: Usable on 70B and larger models",
+      "text": "Usable on 70B and larger models.",
+      "section": "33-i-quants-iq",
+      "bpw": 2.7
+    },
+    {
+      "id": "quant-type:IQ3_XXS",
+      "kind": "quant-type",
+      "tokens": [
+        "IQ3_XXS"
+      ],
+      "patterns": [],
+      "title": "IQ3_XXS: Smallest quant that is still good on mid-size models",
+      "text": "Smallest quant that is still good on mid-size models.",
+      "section": "33-i-quants-iq",
+      "bpw": 3.0625
+    },
+    {
+      "id": "quant-type:IQ3_XS",
+      "kind": "quant-type",
+      "tokens": [
+        "IQ3_XS"
+      ],
+      "patterns": [],
+      "title": "IQ3_XS: bpw: 3.3 (mix)",
+      "text": "bpw: 3.3 (mix). Needs imatrix: Recommended.",
+      "section": "33-i-quants-iq",
+      "bpw": 3.3
+    },
+    {
+      "id": "quant-type:IQ3_S",
+      "kind": "quant-type",
+      "tokens": [
+        "IQ3_S"
+      ],
+      "patterns": [],
+      "title": "IQ3_S: bpw: 3.4375",
+      "text": "bpw: 3.4375. Needs imatrix: Recommended.",
+      "section": "33-i-quants-iq",
+      "bpw": 3.4375
+    },
+    {
+      "id": "quant-type:IQ3_M",
+      "kind": "quant-type",
+      "tokens": [
+        "IQ3_M"
+      ],
+      "patterns": [],
+      "title": "IQ3_M: A good choice just under 4 bits",
+      "text": "A good choice just under 4 bits.",
+      "section": "33-i-quants-iq",
+      "bpw": 3.66
+    },
+    {
+      "id": "quant-type:IQ4_XS",
+      "kind": "quant-type",
+      "tokens": [
+        "IQ4_XS"
+      ],
+      "patterns": [],
+      "title": "IQ4_XS: Close to Q4_K_S quality and about 5% smaller",
+      "text": "Close to Q4_K_S quality and about 5% smaller.",
+      "section": "33-i-quants-iq",
+      "bpw": 4.25
+    },
+    {
+      "id": "quant-type:IQ4_NL",
+      "kind": "quant-type",
+      "tokens": [
+        "IQ4_NL"
+      ],
+      "patterns": [],
+      "title": "IQ4_NL: Blocks of 32",
+      "text": "Blocks of 32. llama.cpp can repack it for faster CPU use.",
+      "section": "33-i-quants-iq",
+      "bpw": 4.5
+    },
+    {
+      "id": "quant-type:TQ1_0",
+      "kind": "quant-type",
+      "tokens": [
+        "TQ1_0"
+      ],
+      "patterns": [],
+      "title": "TQ1_0: Ternary, 5 weights packed per byte",
+      "text": "Ternary, 5 weights packed per byte. No CUDA kernels.",
+      "section": "34-one-bit-and-ternary-types",
+      "bpw": 1.6875
+    },
+    {
+      "id": "quant-type:TQ2_0",
+      "kind": "quant-type",
+      "tokens": [
+        "TQ2_0"
+      ],
+      "patterns": [],
+      "title": "TQ2_0: Ternary, 2 bits per weight",
+      "text": "Ternary, 2 bits per weight. No CUDA kernels.",
+      "section": "34-one-bit-and-ternary-types",
+      "bpw": 2.0625
+    },
+    {
+      "id": "quant-type:Q1_0",
+      "kind": "quant-type",
+      "tokens": [
+        "Q1_0"
+      ],
+      "patterns": [],
+      "title": "Q1_0: One sign bit per weight plus one FP16 scale per 128 weights",
+      "text": "One sign bit per weight plus one FP16 scale per 128 weights. Added by PrismML for 1-bit Bonsai. Has CUDA kernels.",
+      "section": "34-one-bit-and-ternary-types",
+      "bpw": 1.125
+    },
+    {
+      "id": "quant-type:Q2_0",
+      "kind": "quant-type",
+      "tokens": [
+        "Q2_0"
+      ],
+      "patterns": [],
+      "title": "Q2_0: Codes -1, 0, +1, +2 with one scale per 64 weights",
+      "text": "Codes -1, 0, +1, +2 with one scale per 64 weights. Can hold ternary weights. Has CUDA kernels.",
+      "section": "34-one-bit-and-ternary-types",
+      "bpw": 2.25
+    },
+    {
+      "id": "quant-type:PTQ1_0",
+      "kind": "quant-type",
+      "tokens": [
+        "PTQ1_0",
+        "PQ2_0"
+      ],
+      "patterns": [],
+      "title": "PTQ1_0: PrismML fork only",
+      "text": "PrismML fork only. Used by Ternary Bonsai 2. Stock llama.cpp rejects them.",
+      "section": "34-one-bit-and-ternary-types",
+      "bpw": 1.75
+    },
+    {
+      "id": "quant-type:MXFP4",
+      "kind": "quant-type",
+      "tokens": [
+        "MXFP4"
+      ],
+      "patterns": [],
+      "title": "MXFP4: Arrived with gpt-oss in August 2025",
+      "text": "Arrived with gpt-oss in August 2025. Runs on any GPU. [5090 only] native FP4 math.",
+      "section": "35-fp4-types-inside-gguf",
+      "bpw": 4.25
+    },
+    {
+      "id": "quant-type:MXFP4_MOE",
+      "kind": "quant-type",
+      "tokens": [
+        "MXFP4_MOE"
+      ],
+      "patterns": [],
+      "title": "MXFP4_MOE: The file type you see for MoE models, e.g",
+      "text": "The file type you see for MoE models, e.g. gemma-4-26B-A4B-it-MXFP4_MOE.gguf.",
+      "section": "35-fp4-types-inside-gguf"
+    },
+    {
+      "id": "quant-type:NVFP4",
+      "kind": "quant-type",
+      "tokens": [
+        "NVFP4"
+      ],
+      "patterns": [],
+      "title": "NVFP4: Added in March 2026",
+      "text": "Added in March 2026. llama-quantize cannot make it yet, so files come only from converting an NVFP4 checkpoint. Runs on any GPU. [5090 only] native FP4 math (llama.cpp release b8967 and newer).",
+      "section": "35-fp4-types-inside-gguf",
+      "bpw": 4.5
+    },
+    {
+      "id": "quant-type:F32",
+      "kind": "quant-type",
+      "tokens": [
+        "F32"
+      ],
+      "patterns": [],
+      "title": "F32: Too big to use on these cards",
+      "text": "Too big to use on these cards.",
+      "section": "36-full-precision-types-inside-gguf",
+      "bpw": 32
+    },
+    {
+      "id": "quant-type:F16",
+      "kind": "quant-type",
+      "tokens": [
+        "F16"
+      ],
+      "patterns": [],
+      "title": "F16: Half precision",
+      "text": "Half precision.",
+      "section": "36-full-precision-types-inside-gguf",
+      "bpw": 16
+    },
+    {
+      "id": "quant-type:BF16",
+      "kind": "quant-type",
+      "tokens": [
+        "BF16"
+      ],
+      "patterns": [],
+      "title": "BF16: Same size as F16 with the range of F32",
+      "text": "Same size as F16 with the range of F32. Most models are trained in BF16, so this is the \"unquantized\" file.",
+      "section": "36-full-precision-types-inside-gguf",
+      "bpw": 16
+    },
+    {
+      "id": "recipe:UD-",
+      "kind": "recipe",
+      "tokens": [
+        "UD-",
+        "UD-Q4_K_XL",
+        "UD-IQ2_M",
+        "UD-Q8_K_XL"
+      ],
+      "patterns": [],
+      "title": "UD-: Unsloth Dynamic, now version 3.0",
+      "text": "Unsloth Dynamic, now version 3.0. Each layer gets its own quant type, chosen per model, with Unsloth's imatrix. _XL, _L and Q8_K_XL are Unsloth's size labels and do not match llama.cpp's names.",
+      "section": "recipes-that-make-normal-gguf-files"
+    },
+    {
+      "id": "recipe:_L",
+      "kind": "recipe",
+      "tokens": [
+        "_L",
+        "_XL",
+        "Q4_K_L",
+        "Q3_K_XL",
+        "Q6_K_L"
+      ],
+      "patterns": [],
+      "title": "_L: The standard quant with the embedding and output weights at Q8_0",
+      "text": "The standard quant with the embedding and output weights at Q8_0. Every bartowski quant uses an imatrix.",
+      "section": "recipes-that-make-normal-gguf-files"
+    },
+    {
+      "id": "recipe:i1",
+      "kind": "recipe",
+      "tokens": [
+        "i1",
+        "Model.i1-Q4_K_M.gguf",
+        "...-i1-GGUF"
+      ],
+      "patterns": [],
+      "title": "i1: \"mradermacher imatrix type 1\", the weighted quants",
+      "text": "\"mradermacher imatrix type 1\", the weighted quants. The repo without i1 holds static quants made without an imatrix.",
+      "section": "recipes-that-make-normal-gguf-files"
+    },
+    {
+      "id": "recipe:GSQ-RCO",
+      "kind": "recipe",
+      "tokens": [
+        "GSQ-RCO"
+      ],
+      "patterns": [],
+      "title": "GSQ-RCO: GSQ (Gumbel-Softmax Quantization) learns better rounding at 2 to 3 bits",
+      "text": "GSQ (Gumbel-Softmax Quantization) learns better rounding at 2 to 3 bits. RCO (Riemannian Constrained Optimization) picks a type per tensor so the file hits an exact size. Some community repos reuse the tag without being part of ISTA.",
+      "section": "recipes-that-make-normal-gguf-files"
+    },
+    {
+      "id": "recipe:APEX",
+      "kind": "recipe",
+      "tokens": [
+        "APEX",
+        "APEX-I-Balanced",
+        "-Quality",
+        "-Compact",
+        "-Mini"
+      ],
+      "patterns": [],
+      "title": "APEX: Adaptive Precision for EXpert Models",
+      "text": "Adaptive Precision for EXpert Models. A recipe for MoE models that treats routed experts, shared experts and attention differently. I means made with an imatrix.",
+      "section": "recipes-that-make-normal-gguf-files"
+    },
+    {
+      "id": "recipe:APEX-I-MiniPlus",
+      "kind": "recipe",
+      "tokens": [
+        "APEX-I-MiniPlus",
+        "NanoPlus"
+      ],
+      "patterns": [],
+      "title": "APEX-I-MiniPlus: IsValorum's own tuned variants of APEX-I (about 3.4 and 2.9 bpw)",
+      "text": "IsValorum's own tuned variants of APEX-I (about 3.4 and 2.9 bpw).",
+      "section": "recipes-that-make-normal-gguf-files"
+    },
+    {
+      "id": "recipe:MXFP4_MOE",
+      "kind": "recipe",
+      "tokens": [
+        "MXFP4_MOE"
+      ],
+      "patterns": [],
+      "title": "MXFP4_MOE: Experts in MXFP4, everything else in Q8_0",
+      "text": "Experts in MXFP4, everything else in Q8_0.",
+      "section": "recipes-that-make-normal-gguf-files"
+    },
+    {
+      "id": "recipe:IQ4_XS-3.84bpw",
+      "kind": "recipe",
+      "tokens": [
+        "IQ4_XS-3.84bpw"
+      ],
+      "patterns": [],
+      "title": "IQ4_XS-3.84bpw: ShapeLearn picks a type per tensor",
+      "text": "ShapeLearn picks a type per tensor. The file name gives the size class and the true bpw.",
+      "section": "recipes-that-make-normal-gguf-files"
+    },
+    {
+      "id": "recipe:BaseQuant",
+      "kind": "recipe",
+      "tokens": [
+        "BaseQuant"
+      ],
+      "patterns": [],
+      "title": "BaseQuant: Files sized to match Unsloth's tiers",
+      "text": "Files sized to match Unsloth's tiers. The uploader claims lower KL divergence but does not publish the method.",
+      "section": "recipes-that-make-normal-gguf-files"
+    },
+    {
+      "id": "recipe:FIT",
+      "kind": "recipe",
+      "tokens": [
+        "FIT"
+      ],
+      "patterns": [],
+      "title": "FIT: Picks a type per tensor to meet a quality target",
+      "text": "Picks a type per tensor to meet a quality target.",
+      "section": "recipes-that-make-normal-gguf-files"
+    },
+    {
+      "id": "recipe:K_P",
+      "kind": "recipe",
+      "tokens": [
+        "K_P"
+      ],
+      "patterns": [],
+      "title": "K_P: Custom per-model profiles, about 5 to 15% larger than the base quant",
+      "text": "Custom per-model profiles, about 5 to 15% larger than the base quant.",
+      "section": "recipes-that-make-normal-gguf-files"
+    },
+    {
+      "id": "recipe:NEO",
+      "kind": "recipe",
+      "tokens": [
+        "NEO",
+        "NEO-CODE",
+        "Di-IMatrix",
+        "MAX"
+      ],
+      "patterns": [],
+      "title": "NEO: NEO is DavidAU's own imatrix calibration text, and NEO-CODE is a coding version",
+      "text": "NEO is DavidAU's own imatrix calibration text, and NEO-CODE is a coding version. Di-IMatrix combines both. MAX keeps the output tensor at BF16. These are the author's own labels.",
+      "section": "recipes-that-make-normal-gguf-files",
+      "authorLabel": true
+    },
+    {
+      "id": "recipe:qat-q4_0",
+      "kind": "recipe",
+      "tokens": [
+        "qat-q4_0"
+      ],
+      "patterns": [],
+      "title": "qat-q4_0: Gemma 4 trained to work at 4 bits (quantization-aware training) and shipped as standard Q4_0",
+      "text": "Gemma 4 trained to work at 4 bits (quantization-aware training) and shipped as standard Q4_0.",
+      "section": "recipes-that-make-normal-gguf-files"
+    },
+    {
+      "id": "recipe:int4-gguf",
+      "kind": "recipe",
+      "tokens": [
+        "int4-gguf"
+      ],
+      "patterns": [],
+      "title": "int4-gguf: A Q4_1 file that holds the model's trained 4-bit codes",
+      "text": "A Q4_1 file that holds the model's trained 4-bit codes. Aimed at Apple Silicon.",
+      "section": "recipes-that-make-normal-gguf-files"
+    },
+    {
+      "id": "recipe:nvfp4-gguf",
+      "kind": "recipe",
+      "tokens": [
+        "nvfp4-gguf"
+      ],
+      "patterns": [],
+      "title": "nvfp4-gguf: NVFP4 weights in GGUF",
+      "text": "NVFP4 weights in GGUF. [5090 only] native speed.",
+      "section": "recipes-that-make-normal-gguf-files"
+    },
+    {
+      "id": "recipe:Q5_K-MIX",
+      "kind": "recipe",
+      "tokens": [
+        "Q5_K-MIX"
+      ],
+      "patterns": [],
+      "title": "Q5_K-MIX: A mixed quant of the vision projector (mmproj) only",
+      "text": "A mixed quant of the vision projector (mmproj) only.",
+      "section": "recipes-that-make-normal-gguf-files"
+    },
+    {
+      "id": "recipe:XQ",
+      "kind": "recipe",
+      "tokens": [
+        "XQ"
+      ],
+      "patterns": [],
+      "title": "XQ: IndrasMirror's Xolotl engine, a fork of Strata",
+      "text": "IndrasMirror's Xolotl engine, a fork of Strata.",
+      "section": "files-that-do-not-load-in-stock-llamacpp-lm-studio-or-ollama"
+    },
+    {
+      "id": "recipe:VQ",
+      "kind": "recipe",
+      "tokens": [
+        "VQ"
+      ],
+      "patterns": [],
+      "title": "VQ: The ds4-dfm-rs runtime from the YoungAi recipe",
+      "text": "The ds4-dfm-rs runtime from the YoungAi recipe.",
+      "section": "files-that-do-not-load-in-stock-llamacpp-lm-studio-or-ollama"
+    },
+    {
+      "id": "recipe:Strata",
+      "kind": "recipe",
+      "tokens": [
+        "Strata"
+      ],
+      "patterns": [],
+      "title": "Strata: The Strata engine, which splits big MoE models across GPU, CPU and SSD",
+      "text": "The Strata engine, which splits big MoE models across GPU, CPU and SSD. The files are repacked for it.",
+      "section": "files-that-do-not-load-in-stock-llamacpp-lm-studio-or-ollama"
+    },
+    {
+      "id": "recipe:NInfer",
+      "kind": "recipe",
+      "tokens": [
+        "NInfer"
+      ],
+      "patterns": [],
+      "title": "NInfer: The NInfer engine, built for one RTX 5090",
+      "text": "The NInfer engine, built for one RTX 5090. It uses its own .ninfer files.",
+      "section": "files-that-do-not-load-in-stock-llamacpp-lm-studio-or-ollama"
+    },
+    {
+      "id": "recipe:prefiller",
+      "kind": "recipe",
+      "tokens": [
+        "prefiller"
+      ],
+      "patterns": [],
+      "title": "prefiller: ISTA's disaggregated llama.cpp fork",
+      "text": "ISTA's disaggregated llama.cpp fork. An NVFP4 copy handles the prompt and a low-bit GGUF handles generation.",
+      "section": "files-that-do-not-load-in-stock-llamacpp-lm-studio-or-ollama"
+    },
+    {
+      "id": "recipe:Gyro",
+      "kind": "recipe",
+      "tokens": [
+        "Gyro"
+      ],
+      "patterns": [],
+      "title": "Gyro: AgentionAI's trellis-coded format with an open spec",
+      "text": "AgentionAI's trellis-coded format with an open spec.",
+      "section": "files-that-do-not-load-in-stock-llamacpp-lm-studio-or-ollama"
+    },
+    {
+      "id": "recipe:PTQ1_0",
+      "kind": "recipe",
+      "tokens": [
+        "PTQ1_0",
+        "PQ2_0"
+      ],
+      "patterns": [],
+      "title": "PTQ1_0: PrismML's llama.cpp fork",
+      "text": "PrismML's llama.cpp fork.",
+      "section": "files-that-do-not-load-in-stock-llamacpp-lm-studio-or-ollama"
+    },
+    {
+      "id": "format:FP8",
+      "kind": "format",
+      "tokens": [
+        "FP8"
+      ],
+      "patterns": [],
+      "title": "FP8: Weight scale: One per tensor",
+      "text": "Weight scale: One per tensor. Activation scale: One per tensor, fixed.",
+      "section": "71-floating-point-formats"
+    },
+    {
+      "id": "format:FP8-Dynamic",
+      "kind": "format",
+      "tokens": [
+        "FP8-Dynamic"
+      ],
+      "patterns": [],
+      "title": "FP8-Dynamic: Weight scale: One per output channel",
+      "text": "Weight scale: One per output channel. Activation scale: Computed per token at run time.",
+      "section": "71-floating-point-formats"
+    },
+    {
+      "id": "format:FP8-Block",
+      "kind": "format",
+      "tokens": [
+        "FP8-Block"
+      ],
+      "patterns": [],
+      "title": "FP8-Block: Weight scale: One per 128 × 128 block",
+      "text": "Weight scale: One per 128 × 128 block. Activation scale: Per group of 128, at run time.",
+      "section": "71-floating-point-formats"
+    },
+    {
+      "id": "format:W4A16",
+      "kind": "format",
+      "tokens": [
+        "W4A16",
+        "W8A16"
+      ],
+      "patterns": [],
+      "title": "W4A16: Weight only",
+      "text": "Weight only. Weights are unpacked to 16-bit before the math.",
+      "section": "73-reading-wa-names"
+    },
+    {
+      "id": "format:W8A8-INT8",
+      "kind": "format",
+      "tokens": [
+        "W8A8-INT8"
+      ],
+      "patterns": [],
+      "title": "W8A8-INT8: 8-bit integer weights and activations",
+      "text": "8-bit integer weights and activations",
+      "section": "73-reading-wa-names"
+    },
+    {
+      "id": "format:W8A8-FP8",
+      "kind": "format",
+      "tokens": [
+        "W8A8-FP8"
+      ],
+      "patterns": [],
+      "title": "W8A8-FP8: FP8 weights and activations",
+      "text": "FP8 weights and activations",
+      "section": "73-reading-wa-names"
+    },
+    {
+      "id": "format:NVFP4A16",
+      "kind": "format",
+      "tokens": [
+        "NVFP4A16",
+        "MXFP4A16"
+      ],
+      "patterns": [],
+      "title": "NVFP4A16: FP4 weights, 16-bit math",
+      "text": "FP4 weights, 16-bit math",
+      "section": "73-reading-wa-names"
+    },
+    {
+      "id": "format:W4A4",
+      "kind": "format",
+      "tokens": [
+        "W4A4",
+        "NVFP4",
+        "MXFP4"
+      ],
+      "patterns": [],
+      "title": "W4A4: FP4 weights and FP4 activations",
+      "text": "FP4 weights and FP4 activations",
+      "section": "73-reading-wa-names"
+    },
+    {
+      "id": "format:W4AFP8",
+      "kind": "format",
+      "tokens": [
+        "W4AFP8"
+      ],
+      "patterns": [],
+      "title": "W4AFP8: 4-bit weights, FP8 activations",
+      "text": "4-bit weights, FP8 activations",
+      "section": "73-reading-wa-names"
+    },
+    {
+      "id": "format:INT4",
+      "kind": "format",
+      "tokens": [
+        "INT4",
+        "INT8"
+      ],
+      "patterns": [],
+      "title": "INT4: Usually integer weights",
+      "text": "Usually integer weights. Check config.json to be sure.",
+      "section": "73-reading-wa-names"
+    },
+    {
+      "id": "size:27B",
+      "kind": "size",
+      "tokens": [
+        "27B",
+        "9B",
+        "4B"
+      ],
+      "patterns": [],
+      "title": "27B: Billions of parameters",
+      "text": "Billions of parameters. Memory for weights is about this number × bpw ÷ 8, in GB.",
+      "section": "size-and-architecture-tags"
+    },
+    {
+      "id": "size:E2B",
+      "kind": "size",
+      "tokens": [
+        "E2B",
+        "E4B"
+      ],
+      "patterns": [],
+      "title": "E2B: Google Gemma \"effective\" parameters",
+      "text": "Google Gemma \"effective\" parameters. The model also has large per-layer embedding tables that are looked up rather than computed, so E4B is about 8B in total and the file is bigger than \"4B\" suggests.",
+      "section": "size-and-architecture-tags"
+    },
+    {
+      "id": "size:35B-A3B",
+      "kind": "size",
+      "tokens": [
+        "35B-A3B",
+        "26B-A4B",
+        "74B-A9B",
+        "120B-A12B",
+        "816B-A42B"
+      ],
+      "patterns": [],
+      "title": "35B-A3B: Mixture of experts (MoE)",
+      "text": "Mixture of experts (MoE). The first number is total parameters and the second is the parameters active per token. You need memory for the total. Speed follows the active count.",
+      "section": "size-and-architecture-tags"
+    },
+    {
+      "id": "size:MoE",
+      "kind": "size",
+      "tokens": [
+        "MoE"
+      ],
+      "patterns": [],
+      "title": "MoE: Mixture of experts",
+      "text": "Mixture of experts. A router sends each token to a few of many \"expert\" sub-networks.",
+      "section": "size-and-architecture-tags"
+    },
+    {
+      "id": "size:8X3B-MOE",
+      "kind": "size",
+      "tokens": [
+        "8X3B-MOE"
+      ],
+      "patterns": [],
+      "title": "8X3B-MOE: Eight separate dense 3B models joined with a router using MergeKit (DavidAU)",
+      "text": "Eight separate dense 3B models joined with a router using MergeKit (DavidAU). They were not trained together like a native MoE.",
+      "section": "size-and-architecture-tags"
+    },
+    {
+      "id": "size:24GB",
+      "kind": "size",
+      "tokens": [
+        "24GB",
+        "16GB",
+        "4GB"
+      ],
+      "patterns": [],
+      "title": "24GB: Memory budgets",
+      "text": "Memory budgets. NVIDIA's 74B-A9B-24GB is designed to fit under 24 GB. The 16GB repo is a community build that removes half the experts. The meaning of 4GB on the E4B repo is not stated.",
+      "section": "size-and-architecture-tags"
+    },
+    {
+      "id": "size:152E",
+      "kind": "size",
+      "tokens": [
+        "152E"
+      ],
+      "patterns": [],
+      "title": "152E: Keeps 152 of 288 experts per layer, chosen with RCO (expert pruning)",
+      "text": "Keeps 152 of 288 experts per layer, chosen with RCO (expert pruning).",
+      "section": "size-and-architecture-tags"
+    },
+    {
+      "id": "size:Pruned",
+      "kind": "size",
+      "tokens": [
+        "Pruned"
+      ],
+      "patterns": [],
+      "title": "Pruned: Parameters were removed to shrink the model",
+      "text": "Parameters were removed to shrink the model.",
+      "section": "size-and-architecture-tags"
+    },
+    {
+      "id": "size:Strix-128GB",
+      "kind": "size",
+      "tokens": [
+        "Strix-128GB"
+      ],
+      "patterns": [],
+      "title": "Strix-128GB: Sized to run fully on the GPU of a 128 GB AMD Ryzen AI Max (\"Strix Halo\") machine",
+      "text": "Sized to run fully on the GPU of a 128 GB AMD Ryzen AI Max (\"Strix Halo\") machine.",
+      "section": "size-and-architecture-tags"
+    },
+    {
+      "id": "size:1M",
+      "kind": "size",
+      "tokens": [
+        "1M"
+      ],
+      "patterns": [],
+      "title": "1M: Context length of about 1 million tokens, usually through YaRN scaling of a 262K native window",
+      "text": "Context length of about 1 million tokens, usually through YaRN scaling of a 262K native window.",
+      "section": "size-and-architecture-tags"
+    },
+    {
+      "id": "size:40B",
+      "kind": "size",
+      "tokens": [
+        "40B"
+      ],
+      "patterns": [],
+      "title": "40B: DavidAU expanded a 27B model to more layers",
+      "text": "DavidAU expanded a 27B model to more layers. It is not a new base model.",
+      "section": "size-and-architecture-tags"
+    },
+    {
+      "id": "variant:it",
+      "kind": "variant",
+      "tokens": [
+        "it",
+        "Instruct"
+      ],
+      "patterns": [],
+      "title": "it: Tuned to follow instructions and chat",
+      "text": "Tuned to follow instructions and chat. Google uses it, and most others use Instruct.",
+      "section": "variant-and-modality-tags"
+    },
+    {
+      "id": "variant:Base",
+      "kind": "variant",
+      "tokens": [
+        "Base"
+      ],
+      "patterns": [],
+      "title": "Base: Pre-trained only, not tuned for chat",
+      "text": "Pre-trained only, not tuned for chat.",
+      "section": "variant-and-modality-tags"
+    },
+    {
+      "id": "variant:Thinking",
+      "kind": "variant",
+      "tokens": [
+        "Thinking",
+        "Reasoning"
+      ],
+      "patterns": [],
+      "title": "Thinking: Writes a reasoning section before the answer",
+      "text": "Writes a reasoning section before the answer.",
+      "section": "variant-and-modality-tags"
+    },
+    {
+      "id": "variant:Coder",
+      "kind": "variant",
+      "tokens": [
+        "Coder",
+        "CODE"
+      ],
+      "patterns": [],
+      "title": "Coder: Tuned or calibrated for programming and agent work",
+      "text": "Tuned or calibrated for programming and agent work.",
+      "section": "variant-and-modality-tags"
+    },
+    {
+      "id": "variant:VL",
+      "kind": "variant",
+      "tokens": [
+        "VL"
+      ],
+      "patterns": [],
+      "title": "VL: Vision-language",
+      "text": "Vision-language. It accepts images and needs an mmproj file.",
+      "section": "variant-and-modality-tags"
+    },
+    {
+      "id": "variant:Omni",
+      "kind": "variant",
+      "tokens": [
+        "Omni"
+      ],
+      "patterns": [],
+      "title": "Omni: Accepts several input types, e.g",
+      "text": "Accepts several input types, e.g. text, images and audio.",
+      "section": "variant-and-modality-tags"
+    },
+    {
+      "id": "variant:Flash",
+      "kind": "variant",
+      "tokens": [
+        "Flash"
+      ],
+      "patterns": [],
+      "title": "Flash: A vendor's faster and cheaper line (DeepSeek, GLM, Qwen)",
+      "text": "A vendor's faster and cheaper line (DeepSeek, GLM, Qwen).",
+      "section": "variant-and-modality-tags"
+    },
+    {
+      "id": "variant:Next",
+      "kind": "variant",
+      "tokens": [
+        "Next"
+      ],
+      "patterns": [],
+      "title": "Next: Qwen's experimental preview of a new architecture",
+      "text": "Qwen's experimental preview of a new architecture.",
+      "section": "variant-and-modality-tags"
+    },
+    {
+      "id": "variant:Nano",
+      "kind": "variant",
+      "tokens": [
+        "Nano",
+        "Mini",
+        "Super",
+        "Lightning",
+        "Bolt"
+      ],
+      "patterns": [],
+      "title": "Nano: Size or speed tiers within a family",
+      "text": "Size or speed tiers within a family.",
+      "section": "variant-and-modality-tags"
+    },
+    {
+      "id": "variant:mmproj",
+      "kind": "variant",
+      "tokens": [
+        "mmproj"
+      ],
+      "patterns": [],
+      "title": "mmproj: The multimodal projector file",
+      "text": "The multimodal projector file. Load it with --mmproj.",
+      "section": "variant-and-modality-tags"
+    },
+    {
+      "id": "variant:MIX",
+      "kind": "variant",
+      "tokens": [
+        "MIX"
+      ],
+      "patterns": [],
+      "title": "MIX: A file that mixes quant types",
+      "text": "A file that mixes quant types.",
+      "section": "variant-and-modality-tags"
+    },
+    {
+      "id": "training:SFT",
+      "kind": "training",
+      "tokens": [
+        "SFT"
+      ],
+      "patterns": [],
+      "title": "SFT: Supervised fine-tuning",
+      "text": "Supervised fine-tuning. Training on example prompts with good answers.",
+      "section": "training-tags"
+    },
+    {
+      "id": "training:RLOO",
+      "kind": "training",
+      "tokens": [
+        "RLOO"
+      ],
+      "patterns": [],
+      "title": "RLOO: REINFORCE Leave-One-Out, a reinforcement learning method from Cohere",
+      "text": "REINFORCE Leave-One-Out, a reinforcement learning method from Cohere. Each answer is scored against the average of the other answers to the same prompt.",
+      "section": "training-tags"
+    },
+    {
+      "id": "training:DPO",
+      "kind": "training",
+      "tokens": [
+        "DPO"
+      ],
+      "patterns": [],
+      "title": "DPO: Direct Preference Optimization",
+      "text": "Direct Preference Optimization. Training on pairs of preferred and rejected answers. SimPO is a variant.",
+      "section": "training-tags"
+    },
+    {
+      "id": "training:GRPO",
+      "kind": "training",
+      "tokens": [
+        "GRPO"
+      ],
+      "patterns": [],
+      "title": "GRPO: Group Relative Policy Optimization, from DeepSeek",
+      "text": "Group Relative Policy Optimization, from DeepSeek. Reinforcement learning that compares a group of answers to the same prompt.",
+      "section": "training-tags"
+    },
+    {
+      "id": "training:Distill",
+      "kind": "training",
+      "tokens": [
+        "Distill",
+        "Distilled"
+      ],
+      "patterns": [],
+      "title": "Distill: A smaller model trained on a stronger model's outputs",
+      "text": "A smaller model trained on a stronger model's outputs.",
+      "section": "training-tags"
+    },
+    {
+      "id": "training:Opus5.5",
+      "kind": "training",
+      "tokens": [
+        "Opus5.5",
+        "GPT6Astra",
+        "Claude-Mythos-5"
+      ],
+      "patterns": [],
+      "title": "Opus5.5: The fine-tune used text that was said to come from those models",
+      "text": "The fine-tune used text that was said to come from those models. The repo does not contain those companies' weights.",
+      "section": "training-tags"
+    },
+    {
+      "id": "training:LoRA",
+      "kind": "training",
+      "tokens": [
+        "LoRA"
+      ],
+      "patterns": [],
+      "title": "LoRA: Low-Rank Adaptation",
+      "text": "Low-Rank Adaptation. Small add-on matrices are trained instead of the full model, and can be merged back in.",
+      "section": "training-tags"
+    },
+    {
+      "id": "training:QAT",
+      "kind": "training",
+      "tokens": [
+        "QAT"
+      ],
+      "patterns": [],
+      "title": "QAT: Quantization-aware training",
+      "text": "Quantization-aware training. The model is trained while simulating low-bit weights, so a later 4-bit quant loses very little.",
+      "section": "training-tags"
+    },
+    {
+      "id": "training:QAD",
+      "kind": "training",
+      "tokens": [
+        "QAD"
+      ],
+      "patterns": [],
+      "title": "QAD: Quantization-aware distillation",
+      "text": "Quantization-aware distillation. Similar to QAT, used by NVIDIA and Liquid AI.",
+      "section": "training-tags"
+    },
+    {
+      "id": "training:merge",
+      "kind": "training",
+      "tokens": [
+        "merge"
+      ],
+      "patterns": [],
+      "title": "merge: Weights of several fine-tunes combined into one model, usually with mergekit",
+      "text": "Weights of several fine-tunes combined into one model, usually with mergekit.",
+      "section": "training-tags"
+    },
+    {
+      "id": "training:deslop",
+      "kind": "training",
+      "tokens": [
+        "deslop"
+      ],
+      "patterns": [],
+      "title": "deslop: A fine-tune that removes common AI writing habits",
+      "text": "A fine-tune that removes common AI writing habits. It is not uncensoring.",
+      "section": "training-tags"
+    },
+    {
+      "id": "training:Fusion",
+      "kind": "training",
+      "tokens": [
+        "Fusion",
+        "Cold-Fusion",
+        "GAIN",
+        "Fable Fusion"
+      ],
+      "patterns": [],
+      "title": "Fusion: DavidAU's own training recipes, not merges (author label)",
+      "text": "DavidAU's own training recipes, not merges (author label). Numbers like 735 are benchmark scores.",
+      "section": "training-tags",
+      "authorLabel": true
+    },
+    {
+      "id": "training:TURBO",
+      "kind": "training",
+      "tokens": [
+        "TURBO"
+      ],
+      "patterns": [],
+      "title": "TURBO: DavidAU's training to use fewer thinking tokens (author label)",
+      "text": "DavidAU's training to use fewer thinking tokens (author label).",
+      "section": "training-tags",
+      "authorLabel": true
+    },
+    {
+      "id": "training:Deckard",
+      "kind": "training",
+      "tokens": [
+        "Deckard"
+      ],
+      "patterns": [],
+      "title": "Deckard: DavidAU's internal training datasets (author label)",
+      "text": "DavidAU's internal training datasets (author label).",
+      "section": "training-tags",
+      "authorLabel": true
+    },
+    {
+      "id": "uncensoring:abliterated",
+      "kind": "uncensoring",
+      "tokens": [
+        "abliterated"
+      ],
+      "patterns": [],
+      "title": "abliterated: Refusals removed by editing weights",
+      "text": "Refusals removed by editing weights. The method finds the \"refusal direction\" in the model's activations and removes it from the weights. It comes from the 2024 research by Arditi, Nanda and others, and FailSpy's abliterator library. huihui-ai publishes many of these.",
+      "section": "uncensoring-tags"
+    },
+    {
+      "id": "uncensoring:Heretic",
+      "kind": "uncensoring",
+      "tokens": [
+        "Heretic"
+      ],
+      "patterns": [],
+      "title": "Heretic: Made with p-e-w's Heretic tool",
+      "text": "Made with p-e-w's Heretic tool. It automatically tunes the abliteration so the model refuses less while changing as little as possible (low KL divergence).",
+      "section": "uncensoring-tags"
+    },
+    {
+      "id": "uncensoring:OBLITERATED",
+      "kind": "uncensoring",
+      "tokens": [
+        "OBLITERATED",
+        "OBLITERATUS"
+      ],
+      "patterns": [],
+      "title": "OBLITERATED: Made with Pliny the Prompter's OBLITERATUS toolkit, which removes refusal directions in several passes",
+      "text": "Made with Pliny the Prompter's OBLITERATUS toolkit, which removes refusal directions in several passes.",
+      "section": "uncensoring-tags"
+    },
+    {
+      "id": "uncensoring:Uncensored",
+      "kind": "uncensoring",
+      "tokens": [
+        "Uncensored",
+        "UNCENSORED"
+      ],
+      "patterns": [],
+      "title": "Uncensored: A general claim that the model refuses less",
+      "text": "A general claim that the model refuses less. It does not name a method. Read the model card.",
+      "section": "uncensoring-tags"
+    },
+    {
+      "id": "uncensoring:dealignai",
+      "kind": "uncensoring",
+      "tokens": [
+        "dealignai"
+      ],
+      "patterns": [],
+      "title": "dealignai: An uploader whose releases are weight-level abliteration only",
+      "text": "An uploader whose releases are weight-level abliteration only.",
+      "section": "uncensoring-tags"
+    },
+    {
+      "id": "uncensoring:Aggressive",
+      "kind": "uncensoring",
+      "tokens": [
+        "Aggressive",
+        "Balanced"
+      ],
+      "patterns": [],
+      "title": "Aggressive: HauhauCS's two strengths",
+      "text": "HauhauCS's two strengths. Balanced is the recommended default. Aggressive is for cases where Balanced still refuses. The method is not published.",
+      "section": "uncensoring-tags"
+    },
+    {
+      "id": "speculative:MTP",
+      "kind": "speculative",
+      "tokens": [
+        "MTP"
+      ],
+      "patterns": [],
+      "title": "MTP: Multi-token prediction",
+      "text": "Multi-token prediction. Extra layers, trained with the model, that guess the next few tokens. Qwen3.8 and DeepSeek ship them. -MTP in a repo name means the GGUF keeps these tensors (many converters drop them). In llama.cpp, turn it on with --spec-type draft-mtp (added May 2026). The author of that feature reported more than 2 times faster generation, and other users reported 1.7 to 1.9 times.",
+      "section": "speculative-decoding-tags"
+    },
+    {
+      "id": "speculative:Native-MTP-Preserved",
+      "kind": "speculative",
+      "tokens": [
+        "Native-MTP-Preserved"
+      ],
+      "patterns": [],
+      "title": "Native-MTP-Preserved: The uncensored model still has all of its original MTP tensors",
+      "text": "The uncensored model still has all of its original MTP tensors.",
+      "section": "speculative-decoding-tags"
+    },
+    {
+      "id": "speculative:FastMTP",
+      "kind": "speculative",
+      "tokens": [
+        "FastMTP"
+      ],
+      "patterns": [],
+      "title": "FastMTP: HauhauCS's add-on drafter and settings",
+      "text": "HauhauCS's add-on drafter and settings. It needs a llama.cpp patch (author label).",
+      "section": "speculative-decoding-tags",
+      "authorLabel": true
+    },
+    {
+      "id": "speculative:DFlash",
+      "kind": "speculative",
+      "tokens": [
+        "DFlash",
+        "DFlash2"
+      ],
+      "patterns": [],
+      "title": "DFlash: A drafter that is a small block diffusion model, writing a whole block of draft tokens at once (ICML 2026)",
+      "text": "A drafter that is a small block diffusion model, writing a whole block of draft tokens at once (ICML 2026). DFlash 2 is a follow-up from Inco AI. A -DFlash repo holds only the drafter. llama.cpp has --spec-type draft-dflash, but not every DFlash drafter runs there yet.",
+      "section": "speculative-decoding-tags"
+    },
+    {
+      "id": "speculative:DSpark",
+      "kind": "speculative",
+      "tokens": [
+        "DSpark"
+      ],
+      "patterns": [],
+      "title": "DSpark: Liquid AI's drafter for LFM2.5",
+      "text": "Liquid AI's drafter for LFM2.5. Use it with --spec-type draft-dspark.",
+      "section": "speculative-decoding-tags"
+    },
+    {
+      "id": "speculative:EAGLE",
+      "kind": "speculative",
+      "tokens": [
+        "EAGLE",
+        "EAGLE-3"
+      ],
+      "patterns": [],
+      "title": "EAGLE: A drafter that predicts the model's next hidden state",
+      "text": "A drafter that predicts the model's next hidden state. Supported in vLLM and SGLang.",
+      "section": "speculative-decoding-tags"
+    },
+    {
+      "id": "quant-method:GGUF",
+      "kind": "quant-method",
+      "tokens": [
+        "GGUF"
+      ],
+      "patterns": [],
+      "title": "GGUF: The llama.cpp file format",
+      "text": "The llama.cpp file format.",
+      "section": "quant-method-tags"
+    },
+    {
+      "id": "quant-method:imatrix",
+      "kind": "quant-method",
+      "tokens": [
+        "imatrix",
+        "IMATRIX",
+        "i1",
+        "I-"
+      ],
+      "patterns": [],
+      "title": "imatrix: Made with an importance matrix (section 2)",
+      "text": "Made with an importance matrix (section 2).",
+      "section": "quant-method-tags"
+    },
+    {
+      "id": "quant-method:UD",
+      "kind": "quant-method",
+      "tokens": [
+        "UD"
+      ],
+      "patterns": [],
+      "title": "UD: Unsloth Dynamic (section 4)",
+      "text": "Unsloth Dynamic (section 4).",
+      "section": "quant-method-tags"
+    },
+    {
+      "id": "quant-method:GSQ",
+      "kind": "quant-method",
+      "tokens": [
+        "GSQ"
+      ],
+      "patterns": [],
+      "title": "GSQ: Gumbel-Softmax Quantization from ISTA",
+      "text": "Gumbel-Softmax Quantization from ISTA. Better rounding, saved as normal GGUF.",
+      "section": "quant-method-tags"
+    },
+    {
+      "id": "quant-method:RCO",
+      "kind": "quant-method",
+      "tokens": [
+        "RCO"
+      ],
+      "patterns": [],
+      "title": "RCO: Riemannian Constrained Optimization from ISTA",
+      "text": "Riemannian Constrained Optimization from ISTA. Picks a type per tensor to hit an exact file size.",
+      "section": "quant-method-tags"
+    },
+    {
+      "id": "quant-method:APEX",
+      "kind": "quant-method",
+      "tokens": [
+        "APEX"
+      ],
+      "patterns": [],
+      "title": "APEX: Adaptive Precision for EXpert Models (LocalAI)",
+      "text": "Adaptive Precision for EXpert Models (LocalAI).",
+      "section": "quant-method-tags"
+    },
+    {
+      "id": "quant-method:FIT",
+      "kind": "quant-method",
+      "tokens": [
+        "FIT"
+      ],
+      "patterns": [],
+      "title": "FIT: FIT-GGUF per-tensor planner",
+      "text": "FIT-GGUF per-tensor planner.",
+      "section": "quant-method-tags"
+    },
+    {
+      "id": "quant-method:K_P",
+      "kind": "quant-method",
+      "tokens": [
+        "K_P"
+      ],
+      "patterns": [],
+      "title": "K_P: HauhauCS \"Perfect\" quant profiles (author label)",
+      "text": "HauhauCS \"Perfect\" quant profiles (author label).",
+      "section": "quant-method-tags",
+      "authorLabel": true
+    },
+    {
+      "id": "quant-method:NEO",
+      "kind": "quant-method",
+      "tokens": [
+        "NEO",
+        "NEO-CODE",
+        "Di-IMatrix",
+        "MAX"
+      ],
+      "patterns": [],
+      "title": "NEO: DavidAU's imatrix data and output-precision labels (author labels)",
+      "text": "DavidAU's imatrix data and output-precision labels (author labels).",
+      "section": "quant-method-tags",
+      "authorLabel": true
+    },
+    {
+      "id": "quant-method:XQ",
+      "kind": "quant-method",
+      "tokens": [
+        "XQ",
+        "VQ"
+      ],
+      "patterns": [],
+      "title": "XQ: Custom formats that need their own engines (section 4)",
+      "text": "Custom formats that need their own engines (section 4).",
+      "section": "quant-method-tags"
+    },
+    {
+      "id": "quant-method:Gyro",
+      "kind": "quant-method",
+      "tokens": [
+        "Gyro"
+      ],
+      "patterns": [],
+      "title": "Gyro: AgentionAI's trellis-coded quant, in the QTIP family",
+      "text": "AgentionAI's trellis-coded quant, in the QTIP family.",
+      "section": "quant-method-tags"
+    },
+    {
+      "id": "quant-method:ShapeLearn",
+      "kind": "quant-method",
+      "tokens": [
+        "ShapeLearn",
+        "byteshape"
+      ],
+      "patterns": [],
+      "title": "ShapeLearn: ByteShape's per-tensor type search",
+      "text": "ByteShape's per-tensor type search.",
+      "section": "quant-method-tags"
+    },
+    {
+      "id": "quant-method:BaseQuant",
+      "kind": "quant-method",
+      "tokens": [
+        "BaseQuant"
+      ],
+      "patterns": [],
+      "title": "BaseQuant: basecompute's quant",
+      "text": "basecompute's quant. The method is not published.",
+      "section": "quant-method-tags"
+    },
+    {
+      "id": "quant-method:Ternary",
+      "kind": "quant-method",
+      "tokens": [
+        "Ternary",
+        "Bonsai"
+      ],
+      "patterns": [],
+      "title": "Ternary: PrismML's natively 1-bit and ternary models",
+      "text": "PrismML's natively 1-bit and ternary models.",
+      "section": "quant-method-tags"
+    },
+    {
+      "id": "quant-method:1.58-bit",
+      "kind": "quant-method",
+      "tokens": [
+        "1.58-bit"
+      ],
+      "patterns": [],
+      "title": "1.58-bit: Ternary weights (-1, 0, +1)",
+      "text": "Ternary weights (-1, 0, +1).",
+      "section": "quant-method-tags"
+    },
+    {
+      "id": "quant-method:FP8",
+      "kind": "quant-method",
+      "tokens": [
+        "FP8",
+        "NVFP4",
+        "MXFP4",
+        "AWQ",
+        "GPTQ",
+        "EXL3",
+        "INT4"
+      ],
+      "patterns": [],
+      "title": "FP8: Formats from section 7",
+      "text": "Formats from section 7.",
+      "section": "quant-method-tags"
+    },
+    {
+      "id": "runtime:Strata",
+      "kind": "runtime",
+      "tokens": [
+        "Strata"
+      ],
+      "patterns": [],
+      "title": "Strata: A local engine (Niko1221) that runs huge MoE models across GPU, CPU and SSD",
+      "text": "A local engine (Niko1221) that runs huge MoE models across GPU, CPU and SSD. Repos with this tag are repacked for it.",
+      "section": "runtimes-engines-and-files"
+    },
+    {
+      "id": "runtime:Xolotl",
+      "kind": "runtime",
+      "tokens": [
+        "Xolotl"
+      ],
+      "patterns": [],
+      "title": "Xolotl: IndrasMirror's fork of Strata for DeepSeek V4.1",
+      "text": "IndrasMirror's fork of Strata for DeepSeek V4.1.",
+      "section": "runtimes-engines-and-files"
+    },
+    {
+      "id": "runtime:NInfer",
+      "kind": "runtime",
+      "tokens": [
+        "NInfer"
+      ],
+      "patterns": [],
+      "title": "NInfer: A CUDA engine built for one RTX 5090, with its own file format",
+      "text": "A CUDA engine built for one RTX 5090, with its own file format.",
+      "section": "runtimes-engines-and-files"
+    },
+    {
+      "id": "runtime:prefiller",
+      "kind": "runtime",
+      "tokens": [
+        "prefiller"
+      ],
+      "patterns": [],
+      "title": "prefiller: An NVFP4 copy of the model that ISTA's fork streams from the SSD to process prompts, while a low-bit GGUF generates",
+      "text": "An NVFP4 copy of the model that ISTA's fork streams from the SSD to process prompts, while a low-bit GGUF generates. The paper calls this disaggregated quantization.",
+      "section": "runtimes-engines-and-files"
+    },
+    {
+      "id": "runtime:Engram",
+      "kind": "runtime",
+      "tokens": [
+        "Engram"
+      ],
+      "patterns": [],
+      "title": "Engram: DeepSeek V4's n-gram memory, which some runtimes read from disk",
+      "text": "DeepSeek V4's n-gram memory, which some runtimes read from disk.",
+      "section": "runtimes-engines-and-files"
+    },
+    {
+      "id": "author-label:Brilliance 50X",
+      "kind": "author-label",
+      "tokens": [
+        "Brilliance 50X",
+        "Turbo Brilliance"
+      ],
+      "patterns": [],
+      "title": "Brilliance 50X: Prompt-triggered modes that set up the model before it reasons",
+      "text": "Prompt-triggered modes that set up the model before it reasons. What \"50X\" measures is not stated.",
+      "section": "davidaus-other-labels",
+      "authorLabel": true
+    },
+    {
+      "id": "author-label:Power-X12",
+      "kind": "author-label",
+      "tokens": [
+        "Power-X12"
+      ],
+      "patterns": [],
+      "title": "Power-X12: Not defined",
+      "text": "Not defined. Probably the 12 reasoning modes in those builds.",
+      "section": "davidaus-other-labels",
+      "authorLabel": true
+    },
+    {
+      "id": "author-label:NM-DAU",
+      "kind": "author-label",
+      "tokens": [
+        "NM-DAU"
+      ],
+      "patterns": [],
+      "title": "NM-DAU: Probably Nightmedia (a collaborator) and DavidAU",
+      "text": "Probably Nightmedia (a collaborator) and DavidAU. Not spelled out.",
+      "section": "davidaus-other-labels",
+      "authorLabel": true
+    },
+    {
+      "id": "family:Qwen3.5",
+      "kind": "family",
+      "tokens": [
+        "Qwen3.5",
+        "Qwen3.6",
+        "Qwen3.8"
+      ],
+      "patterns": [],
+      "title": "Qwen3.5: Qwen3.8-27B is dense with hybrid attention and an MTP head, 262K context",
+      "text": "Qwen3.8-27B is dense with hybrid attention and an MTP head, 262K context. Qwen3.8-Flash-Next is a 125B MoE with 6B active.",
+      "section": "model-families-seen-in-the-sample"
+    },
+    {
+      "id": "family:Gemma 4",
+      "kind": "family",
+      "tokens": [
+        "Gemma 4"
+      ],
+      "patterns": [],
+      "title": "Gemma 4: E2B, E4B, 12B, 26B-A4B (MoE) and 31B",
+      "text": "E2B, E4B, 12B, 26B-A4B (MoE) and 31B.",
+      "section": "model-families-seen-in-the-sample"
+    },
+    {
+      "id": "family:Nemotron 3.5",
+      "kind": "family",
+      "tokens": [
+        "Nemotron 3.5"
+      ],
+      "patterns": [],
+      "title": "Nemotron 3.5: Bolt E4B is built on Gemma 4 E4B",
+      "text": "Bolt E4B is built on Gemma 4 E4B. Bolt 74B-A9B is a Mamba hybrid MoE stored at 2 bits.",
+      "section": "model-families-seen-in-the-sample"
+    },
+    {
+      "id": "family:DeepSeek-V4.1-Flash",
+      "kind": "family",
+      "tokens": [
+        "DeepSeek-V4.1-Flash"
+      ],
+      "patterns": [],
+      "title": "DeepSeek-V4.1-Flash: Large MoE",
+      "text": "Large MoE. 1017 is a minor update.",
+      "section": "model-families-seen-in-the-sample"
+    },
+    {
+      "id": "family:GLM-5.3-Flash",
+      "kind": "family",
+      "tokens": [
+        "GLM-5.3-Flash"
+      ],
+      "patterns": [],
+      "title": "GLM-5.3-Flash: MoE, about 321B total and 18B active",
+      "text": "MoE, about 321B total and 18B active.",
+      "section": "model-families-seen-in-the-sample"
+    },
+    {
+      "id": "family:LFM2.5",
+      "kind": "family",
+      "tokens": [
+        "LFM2.5"
+      ],
+      "patterns": [],
+      "title": "LFM2.5: Hybrid models for local use",
+      "text": "Hybrid models for local use. 24B-A2B is the MoE size.",
+      "section": "model-families-seen-in-the-sample"
+    },
+    {
+      "id": "family:gpt-oss",
+      "kind": "family",
+      "tokens": [
+        "gpt-oss"
+      ],
+      "patterns": [],
+      "title": "gpt-oss: 20B and 120B MoE with MXFP4 experts",
+      "text": "20B and 120B MoE with MXFP4 experts.",
+      "section": "model-families-seen-in-the-sample"
+    },
+    {
+      "id": "family:MiniMax",
+      "kind": "family",
+      "tokens": [
+        "MiniMax"
+      ],
+      "patterns": [],
+      "title": "MiniMax: M3.1 and H3 lines",
+      "text": "M3.1 and H3 lines.",
+      "section": "model-families-seen-in-the-sample"
+    },
+    {
+      "id": "family:flint",
+      "kind": "family",
+      "tokens": [
+        "flint"
+      ],
+      "patterns": [],
+      "title": "flint: Coding agent MoE, about 40B total and 2.5B active",
+      "text": "Coding agent MoE, about 40B total and 2.5B active.",
+      "section": "model-families-seen-in-the-sample"
+    },
+    {
+      "id": "family:Ornith 1.5",
+      "kind": "family",
+      "tokens": [
+        "Ornith 1.5"
+      ],
+      "patterns": [],
+      "title": "Ornith 1.5: MoE family built from Qwen3.5 and Gemma 4",
+      "text": "MoE family built from Qwen3.5 and Gemma 4.",
+      "section": "model-families-seen-in-the-sample"
+    },
+    {
+      "id": "family:Muse Spark Open",
+      "kind": "family",
+      "tokens": [
+        "Muse Spark Open"
+      ],
+      "patterns": [],
+      "title": "Muse Spark Open: 816B total, 42B active",
+      "text": "816B total, 42B active.",
+      "section": "model-families-seen-in-the-sample"
+    },
+    {
+      "id": "family:Bonsai",
+      "kind": "family",
+      "tokens": [
+        "Bonsai"
+      ],
+      "patterns": [],
+      "title": "Bonsai: 1-bit and ternary models",
+      "text": "1-bit and ternary models.",
+      "section": "model-families-seen-in-the-sample"
+    },
+    {
+      "id": "file-part:shard",
+      "kind": "file-part",
+      "tokens": [],
+      "patterns": [
+        "\\d{5}-of-\\d{5}",
+        "\\d+-of-\\d+"
+      ],
+      "title": "Split file part",
+      "text": "One part of a file split into several. Download all parts and point the tool at the first one.",
+      "section": "file-name-parts"
+    },
+    {
+      "id": "quant-type:k-mix",
+      "kind": "quant-type",
+      "tokens": [],
+      "patterns": [
+        "Q\\d_K_[SML]",
+        "Q\\d_K"
+      ],
+      "title": "K-quant mix size",
+      "text": "_S, _M and _L are small, medium and large mixes of the same base type. A bigger mix gives more bits to the tensors that hurt quality most when rounded. Q3_K, Q4_K and Q5_K alone are aliases for the _M versions.",
+      "section": "32-k-quants-_k"
+    },
+    {
+      "id": "size:effective",
+      "kind": "size",
+      "tokens": [],
+      "patterns": [
+        "E\\d+B"
+      ],
+      "title": "Effective parameters",
+      "text": "Google Gemma effective parameters. The file is bigger than the number suggests because of the large per-layer embedding tables.",
+      "section": "size-and-architecture-tags"
+    },
+    {
+      "id": "size:moe",
+      "kind": "size",
+      "tokens": [],
+      "patterns": [
+        "\\d+(?:\\.\\d+)?B-A\\d+(?:\\.\\d+)?B"
+      ],
+      "title": "Mixture of experts size",
+      "text": "Total parameters, then the parameters active per token. You need memory for the total. Speed follows the active number.",
+      "section": "size-and-architecture-tags"
+    },
+    {
+      "id": "size:params",
+      "kind": "size",
+      "tokens": [],
+      "patterns": [
+        "\\d+(?:\\.\\d+)?B"
+      ],
+      "title": "Parameter count",
+      "text": "Billions of parameters. Memory for weights is about this number times bits per weight divided by 8, in GB.",
+      "section": "size-and-architecture-tags"
+    },
+    {
+      "id": "quant-type:xl-mix",
+      "kind": "quant-type",
+      "tokens": [],
+      "patterns": [
+        "Q\\d_K_XL"
+      ],
+      "title": "XL mix size",
+      "text": "_XL is a size label for a larger mix of a K-quant, not a llama.cpp type. With the UD- prefix it is Unsloth's own label, which Unsloth does not define in its docs. On bartowski files (Q3_K_XL, Q6_K_L style) it means the standard quant with the embedding and output weights at Q8_0.",
+      "section": "recipes-that-make-normal-gguf-files"
+    }
+  ]
+}

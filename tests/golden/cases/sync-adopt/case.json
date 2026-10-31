@@ -1,0 +1,85 @@
+{
+  "repos": [
+    {
+      "id": "acme/Tiny-GGUF",
+      "main": "c1",
+      "snapshots": [
+        {
+          "commit": "c1",
+          "mtime": 10,
+          "files": [
+            {
+              "path": "Tiny-Q4_K_M.gguf",
+              "gguf": {
+                "arch": "llama",
+                "fileType": 15,
+                "tensors": [
+                  [
+                    2,
+                    2
+                  ]
+                ]
+              }
+            },
+            {
+              "path": "Tiny-Q8_0.gguf",
+              "gguf": {
+                "arch": "llama",
+                "fileType": 7,
+                "tensors": [
+                  [
+                    2,
+                    4
+                  ]
+                ]
+              }
+            },
+            {
+              "path": "mmproj-F16.gguf",
+              "text": "projector f16"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "other/Keep-GGUF",
+      "main": "k1",
+      "snapshots": [
+        {
+          "commit": "k1",
+          "mtime": 5,
+          "files": [
+            {
+              "path": "Keep-Q8_0.gguf",
+              "gguf": {
+                "arch": "llama",
+                "fileType": 7,
+                "tensors": [
+                  [
+                    5,
+                    5
+                  ]
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "views": [
+    "lmstudio",
+    "ollama"
+  ],
+  "aliases": {
+    "tiny": "acme/Tiny-GGUF:Tiny-Q4_K_M.gguf"
+  },
+  "viewFiles": {
+    "ollama": {
+      ".hfhub-registry/acme/Tiny-GGUF/Tiny-Q4_K_M.gguf.json": "{\"missing\": true}",
+      ".hfhub-registry/acme/Tiny-GGUF/Tiny-Q8_0.gguf.json": "{\"missing\": true}",
+      ".hfhub-registry/other/Keep-GGUF/Keep-Q8_0.gguf.json": "{\"missing\": true}"
+    }
+  }
+}
