@@ -1,6 +1,6 @@
 {
   "name": "hf-cache-manager",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A desktop manager for the local Hugging Face model cache: see what is on disk, get keep-or-delete advice for your PC, reclaim space safely and download exactly the files you need.",
   "keywords": [
     "huggingface",

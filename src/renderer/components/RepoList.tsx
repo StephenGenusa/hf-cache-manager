@@ -19,12 +19,12 @@ const OVERSCAN = 8;
 /** jsdom / initial-layout fallback: used only while the scroller's measured height is 0 (jsdom never has layout), so the first paint is not empty. */
 const FALLBACK_RECT = { width: 270, height: 600 };
 const KIND_LABEL: Record<RepoKind, string> = {
-  gguf: 'GGUF', diffusers: 'Diffusers', transformers: 'Transformers', adapter: 'Adapter', 'single-file': 'Single file',
+  gguf: 'GGUF', diffusers: 'Diffusers', transformers: 'Transformers', adapter: 'Adapter', 'single-file': 'Single file', diffusion: 'Diffusion',
   component: 'Component', dataset: 'Dataset', space: 'Space', unknown: 'Unknown',
 };
 const SORT_LABEL: Record<SortKey, string> = { size: 'Size', name: 'Name', modified: 'Last modified', kind: 'Kind' };
 
-const badgeTone = (r: RepoSummaryDTO) => (r.kinds[0] === 'gguf' ? 'gguf' : r.kinds[0] === 'diffusers' ? 'diffusers' : r.kinds[0] === 'transformers' ? 'safetensors' : 'neutral');
+const badgeTone = (r: RepoSummaryDTO) => (r.kinds[0] === 'gguf' ? 'gguf' : r.kinds[0] === 'diffusers' || r.kinds[0] === 'diffusion' ? 'diffusers' : r.kinds[0] === 'transformers' ? 'safetensors' : 'neutral');
 const repos0Type = (repos: RepoSummaryDTO[], id: string | null): string | null => repos.find((r) => r.repoId === id)?.type ?? null;
 const rowKey = (r: RepoSummaryDTO) => `${r.type}:${r.repoId}`;
 

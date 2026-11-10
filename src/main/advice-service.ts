@@ -4,7 +4,7 @@
 import { advise, effectiveProfile } from '../core/advice/engine';
 import { countedWeights, shapeFromConfig, shapeFromHeaders, sumCounted, type CountedWeights, type ModelShape } from '../core/advice/shape';
 import type { AdviceGroupInput, AdviceSettings, GroupAdvice, MachineProfile } from '../core/advice/types';
-import { currentFiles, defaultReadText, fileBytes, type ReadText } from '../core/classify/classify';
+import { currentFiles, defaultReadText, fileBytes, repoDiffusionSignal, type ReadText } from '../core/classify/classify';
 import { shardInfo } from '../core/classify/gguf-names';
 import type { HfhubConfig } from '../core/compat/config';
 import type { Group, Repo, RepoView, SnapshotFile } from '../core/types';
@@ -154,6 +154,7 @@ export async function repoAdvice(req: AdviceRequest): Promise<RepoAdviceDTO> {
     repoShape: repoKind === 'transformers' && config !== null ? shapeFromConfig(config, counted!.bytes) : null,
     repoWeights: counted === null ? null : { bytes: counted.bytes, note: counted.note },
     incomplete: counted !== null && (view.partialDownloads > 0 || counted.incomplete),
+    diffusionSignal: repoKind === 'diffusion' ? repoDiffusionSignal(repo, readText) : null,
     tools: req.settings.tools ?? defaultTools(req.config), knowledge: KNOWLEDGE,
   });
   return {

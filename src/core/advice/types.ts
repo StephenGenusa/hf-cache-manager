@@ -2,6 +2,7 @@
 import type { RepoFormat, Tool } from '../../shared/knowledge/rules';
 import type { AdviceSettings, MachineProfile } from './profile';
 import type { Knowledge } from '../../shared/knowledge/types';
+import type { DiffusionSignal } from '../classify/diffusion-signal';
 import type { GroupKind, RepoKind } from '../types';
 import type { ModelShape } from './shape';
 
@@ -26,6 +27,8 @@ export interface AdviceInput {
   repoWeights: { bytes: number; note: string | null } | null;
   /** A partial download (`.incomplete`) or a sharded checkpoint whose index names a shard that is not present. */
   incomplete: boolean;
+  /** Why a 'diffusion' repo is one, which words its repo line. */
+  diffusionSignal?: DiffusionSignal | null;
   machine: MachineProfile; settings: AdviceSettings; tools: Tool[]; knowledge: Knowledge;
 }
 

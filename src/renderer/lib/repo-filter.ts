@@ -8,7 +8,7 @@ export interface FilterOptions {
 
 /** The order of the `RepoKind` union, used by the "kind" sort. */
 export const KIND_ORDER: readonly RepoKind[] = [
-  'gguf', 'diffusers', 'transformers', 'adapter', 'single-file', 'component', 'dataset', 'space', 'unknown',
+  'gguf', 'diffusers', 'transformers', 'adapter', 'single-file', 'diffusion', 'component', 'dataset', 'space', 'unknown',
 ];
 
 const kindRank = (r: RepoSummaryDTO): number => {

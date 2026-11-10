@@ -166,13 +166,13 @@ test('Download calls downloadPreview then downloadStart with the previewId and f
   expect(order.at(-1)).toBe('start');
 });
 
-test('a STALE start shows "The repo changed — look up again" with a button that looks up again', async () => {
+test('a STALE start shows the server\'s reason with a button that looks up again', async () => {
   const hubLookup = vi.fn(makeFakeApi().hubLookup);
-  const user = await openDownload(makeFakeApi({ hubLookup, downloadStart: () => Promise.resolve({ ok: false, error: { code: 'STALE', message: 'moved' } }) }));
+  const user = await openDownload(makeFakeApi({ hubLookup, downloadStart: () => Promise.resolve({ ok: false, error: { code: 'STALE', message: 'The repo changed on the Hub since the look-up; look up again.' } }) }));
   await user.click(within(row('quant:UD-Q4_K_XL')).getByTestId('dl-checkbox'));
   await waitFor(() => expect(footerBtn()).toBeEnabled());
   await user.click(footerBtn());
-  expect(await screen.findByText('The repo changed — look up again')).toBeInTheDocument();
+  expect(await screen.findByTestId('stale-note')).toHaveTextContent('The repo changed on the Hub since the look-up; look up again.');
   await user.click(screen.getByRole('button', { name: 'Look up again' }));
   await waitFor(() => expect(hubLookup).toHaveBeenCalledTimes(2));
 });
@@ -259,11 +259,12 @@ test('a preview error is shown and disables Download', async () => {
   expect(footerBtn()).toBeDisabled();
 });
 
-test('a STALE answer from the reactive preview shows the look-up-again note', async () => {
+test('an expired look-up says it expired, not that the repo changed', async () => {
   const hubLookup = vi.fn(makeFakeApi().hubLookup);
-  const user = await openDownload(makeFakeApi({ hubLookup, downloadPreview: () => Promise.resolve({ ok: false, error: { code: 'UNKNOWN_PLAN', message: 'expired' } }) }));
+  const user = await openDownload(makeFakeApi({ hubLookup, downloadPreview: () => Promise.resolve({ ok: false, error: { code: 'UNKNOWN_PLAN', message: 'This look-up expired — look up again.' } }) }));
   await user.click(within(row('quant:UD-Q4_K_XL')).getByTestId('dl-checkbox'));
-  expect(await screen.findByText('The repo changed — look up again')).toBeInTheDocument();
+  expect(await screen.findByTestId('stale-note')).toHaveTextContent('This look-up expired — look up again.');
+  expect(screen.queryByText(/repo changed/)).toBeNull();
   expect(footerBtn()).toBeDisabled();
   await user.click(screen.getByRole('button', { name: 'Look up again' }));
   await waitFor(() => expect(hubLookup).toHaveBeenCalledTimes(2));

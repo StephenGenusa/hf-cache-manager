@@ -22,6 +22,9 @@ async function scanOne(id: string, files: Record<string, string | number>, type:
   return r;
 }
 
+const REBELS_CONFIG = JSON.stringify({ quantization: 'w6a8_int8', format: 'w6a8', weight_bits: 6, activation_bits: 8, loader: 'comfyui', library: 'comfy-kitchen' });
+const CARD = (front: string): string => `---\n${front}\n---\n# Card\n`;
+
 describe('detectKinds', () => {
   it.each([
     ['GGUF collection', 'unsloth/Qwen3.6-27B-GGUF', { 'Qwen3.6-27B-Q8_0.gguf': 800, 'README.md': '# q' }, ['gguf']],
@@ -39,6 +42,22 @@ describe('detectKinds', () => {
     ['VAE component', 'madebyollin/sdxl-vae-fp16-fix', { 'config.json': '{"_class_name":"AutoencoderKL"}',
       'diffusion_pytorch_model.safetensors': 160, 'sdxl_vae.safetensors': 160 }, ['component']],
     ['unknown', 'o/misc', { 'notes/a.txt': 'a' }, ['unknown']],
+    ['LoRA by README tag, plain file name', 'o/pixel', { 'README.md': CARD('pipeline_tag: text-to-image\nlibrary_name: diffusers\ntags: [lora]'), 'pixel_style_v2.safetensors': 40 }, ['adapter', 'single-file']],
+    ['LoRA by README tag, in folders', 'o/packed', { 'README.md': CARD('tags: [lora]'), 'flux/a.safetensors': 40 }, ['adapter']],
+    ['a lora tag on a language model changes nothing', 'o/llm', { 'config.json': '{"model_type":"gemma4"}', 'README.md': CARD('tags: [lora]'), 'model.safetensors': 40 }, ['transformers']],
+    ['a lora tag on a GGUF repo changes nothing', 'o/g-GGUF', { 'README.md': CARD('tags: [lora]'), 'x-Q4_K_M.gguf': 40 }, ['gguf']],
+    ['a lora tag with no weights changes nothing', 'o/card2', { 'README.md': CARD('tags: [lora]') }, ['unknown']],
+    ['a lora tag on a ComfyUI-config repo stays diffusion', 'o/c', { 'config.json': '{"loader":"comfyui"}', 'README.md': CARD('tags: [lora]'), 'A/x.safetensors': 40 }, ['diffusion']],
+    ['ComfyUI bundle: root config names the loader, weights in folders', 'realrebelai/Rebels_w6a8s', { 'config.json': REBELS_CONFIG,
+      'FLUX/flux3_image_klein_w6a8.safetensors': 40, 'QWEN/qwen_image_2.1_w6a8.safetensors': 50 }, ['diffusion']],
+    ['root checkpoint, README says text-to-image', 'o/dit', { 'README.md': CARD('pipeline_tag: text-to-image'), 'dit-w4a8.safetensors': 40 }, ['diffusion']],
+    ['W6A8 language model stays transformers', 'o/llm-W6A8', { 'config.json': '{"model_type":"gemma4"}', 'README.md': CARD('tags: [w6a8, comfyui]'), 'model.safetensors': 40 }, ['transformers']],
+    ['no signal stays single-file', 'o/ckpt', { 'README.md': CARD('license: mit'), 'ckpt.safetensors': 40 }, ['single-file']],
+    ['a signal without weights is not a model', 'o/card', { 'README.md': CARD('pipeline_tag: text-to-image') }, ['unknown']],
+    ['GGUF stays primary', 'o/image-GGUF', { 'README.md': CARD('tags: [comfyui]'), 'x-Q4_K_M.gguf': 40, 'y.safetensors': 40 }, ['gguf', 'single-file']],
+    ['a pipeline stays diffusers', 'o/pipe', { 'model_index.json': JSON.stringify({ _class_name: 'P' }), 'README.md': CARD('pipeline_tag: text-to-image'), 'z.safetensors': 40 }, ['diffusers', 'single-file']],
+    ['an adapter stays an adapter', 'o/style', { 'adapter_config.json': '{}', 'README.md': CARD('pipeline_tag: text-to-image'), 'adapter_model.safetensors': 40 }, ['adapter']],
+    ['a LoRA by name stays an adapter', 'o/style-lora', { 'README.md': CARD('pipeline_tag: text-to-image'), 'style-lora.safetensors': 40 }, ['adapter', 'single-file']],
   ])('%s', async (_n, id, files, kinds) => expect(detectKinds(await scanOne(id, files as Record<string, string | number>))).toEqual(kinds));
 
   it('dataset and space kinds sit at their precedence position', async () => {
@@ -626,5 +645,51 @@ describe('RepoView totals', () => {
     ];
     const allViews = repos.flatMap((r) => [classifyRepo(r), classifyRepo(r, () => null)]);
     for (const v of allViews) expect(new Set(v.groups.map((g) => g.key)).size).toBe(v.groups.length);
+  });
+});
+
+describe('diffusion repo groups', () => {
+  it('lists each weight file as its own group, with its own size', async () => {
+    const v = classifyRepo(await scanOne('realrebelai/Rebels_w6a8s', {
+      'config.json': REBELS_CONFIG, 'README.md': CARD('license: other'),
+      'FLUX/flux3_image_klein_w6a8.safetensors': 40, 'KREA/krea2_turbo_w6a8.safetensors': 90,
+    }));
+    const rows = v.groups.map((g) => [g.kind, g.label, g.apparentBytes, g.locked]);
+    expect(rows).toEqual([
+      ['root-file', 'FLUX/flux3_image_klein_w6a8.safetensors', 40, false],
+      ['root-file', 'KREA/krea2_turbo_w6a8.safetensors', 90, false],
+      ['other', 'other files', REBELS_CONFIG.length, false],
+      ['assets', 'model card and assets', CARD('license: other').length, false],
+    ]);
+  });
+  it('keeps a sharded checkpoint and its index together', async () => {
+    const v = classifyRepo(await scanOne('o/sharded', {
+      'config.json': '{"loader":"comfyui"}',
+      'A/m-00001-of-00002.safetensors': 10, 'A/m-00002-of-00002.safetensors': 20, 'A/m.safetensors.index.json': '{}',
+      'B/n.safetensors': 30,
+    }));
+    const weights = v.groups.filter((g) => g.kind === 'root-file');
+    expect(weights.map((g) => [g.label, g.files.length])).toEqual([['A/m.safetensors', 3], ['B/n.safetensors', 1]]);
+  });
+});
+
+describe('LoRA repo groups', () => {
+  const rows = async (files: Record<string, string | number>) => classifyRepo(await scanOne('o/loras', files)).groups
+    .filter((g) => g.kind !== 'assets').map((g) => [g.kind, g.label, g.apparentBytes]);
+
+  it('a pack at the root lists each LoRA on its own', async () => {
+    expect(await rows({ 'a-lora.safetensors': 40, 'b-lora.safetensors': 50 })).toEqual([
+      ['root-file', 'a-lora.safetensors', 40], ['root-file', 'b-lora.safetensors', 50],
+    ]);
+  });
+  it('a pack in folders lists each LoRA on its own', async () => {
+    expect(await rows({ 'flux/a-lora.safetensors': 40, 'wan/b-lora.safetensors': 50 })).toEqual([
+      ['root-file', 'flux/a-lora.safetensors', 40], ['root-file', 'wan/b-lora.safetensors', 50],
+    ]);
+  });
+  it('a PEFT adapter keeps its weights and config as they were: they only work together', async () => {
+    expect(await rows({ 'adapter_config.json': '{}', 'adapter_model.safetensors': 40, 'other_model.safetensors': 50 })).toEqual([
+      ['weights', 'weights', 90], ['tokenizer-config', 'tokenizer and config', 2],
+    ]);
   });
 });

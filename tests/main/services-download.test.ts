@@ -9,7 +9,7 @@ import { SafeFs } from '../../src/core/safe-fs';
 import { createCorePort } from '../../src/main/core-port';
 import {
   ALL_CACHED_TEXT, ALL_QUEUED_TEXT, CHANGED_TEXT, downloadGroups, previewFingerprint, E2E_ENDPOINT_TEXT, GATED_TEXT, MAX_PREVIEWS, MOVED_TEXT, OFFLINE_TEXT, PREVIEW_USED_TEXT,
-  UNVERIFIABLE_TEXT,
+  UNVERIFIABLE_TEXT, DOWNLOAD_TTL_MS, LOOKUP_GONE_TEXT,
 } from '../../src/main/download-service';
 import { FREE_MARGIN } from '../../src/main/download/engine';
 import { inProcessScanRunner } from '../../src/main/scan-client';
@@ -346,6 +346,25 @@ describe('downloadPreview', () => {
     expect(p).toMatchObject({ files: 0, requiresBytes: 0, fits: false, reason: ALL_CACHED_TEXT });
     expect(errOf(await w.svc.downloadPreview(l.lookupId, ['quant:nope'])).code).toBe('NOT_FOUND');
     expect(errOf(await w.svc.downloadPreview('00000000-0000-4000-8000-000000000009', ['quant:Q4_K_M'])).code).toBe('UNKNOWN_PLAN');
+  });
+
+  test('a look-up in use does not expire; one left idle for DOWNLOAD_TTL_MS does', async () => {
+    const clock = { t: Date.now() };
+    const w = await world({ over: { now: () => clock.t } });
+    const l = unwrap(await w.svc.hubLookup('bartowski/tiny-GGUF'));
+    const key = groupOf(l, 'Q4_K_M').key;
+    // used every 9 minutes for half an hour: still there
+    for (let i = 0; i < 3; i++) {
+      clock.t += DOWNLOAD_TTL_MS - 60_000;
+      unwrap(await w.svc.downloadPreview(l.lookupId, [key]));
+    }
+    clock.t += DOWNLOAD_TTL_MS - 60_000;
+    unwrap(await w.svc.lookupGroups(l.lookupId));
+    clock.t += DOWNLOAD_TTL_MS - 60_000;
+    unwrap(await w.svc.downloadAdvice(l.lookupId));
+    // then left alone past the TTL: gone
+    clock.t += DOWNLOAD_TTL_MS;
+    expect(errOf(await w.svc.downloadPreview(l.lookupId, [key]))).toMatchObject({ code: 'UNKNOWN_PLAN', message: LOOKUP_GONE_TEXT });
   });
 });
 

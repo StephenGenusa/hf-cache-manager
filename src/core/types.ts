@@ -72,7 +72,7 @@ export interface CacheModel {
 
 // ---------- classification ----------
 export type RepoKind =
-  'gguf' | 'diffusers' | 'transformers' | 'adapter' | 'single-file' | 'component' | 'dataset' | 'space' | 'unknown';
+  'gguf' | 'diffusers' | 'transformers' | 'adapter' | 'single-file' | 'diffusion' | 'component' | 'dataset' | 'space' | 'unknown';
 
 export type GroupKind =
   'quant' | 'mmproj' | 'draft' | 'component' | 'weights' | 'tokenizer-config' | 'assets' | 'superseded' | 'root-file' | 'other';

@@ -13,11 +13,18 @@ const EXTENSION = /\.gguf$/i;
 /** Quant types and recipe tokens appear in any case in file names; short ones stay exact so 'It' is not 'it'. */
 function isCaseInsensitive(entry: KnowledgeEntry, token: string): boolean {
   return (
-    (entry.kind === 'quant-type' || entry.kind === 'recipe') && token.length > 3
+    (entry.kind === 'quant-type' || entry.kind === 'recipe' || entry.kind === 'format') && token.length > 3
   );
 }
 
+/** The kinds looked for inside an underscore-joined name; 'it' or 'dev' in `some_model_it` are ordinary words. */
+const FOUND_INSIDE: ReadonlySet<KnowledgeEntry['kind']> = new Set(['quant-type', 'format']);
+
+/** Found inside one too, though its kind is not: `pytorch_lora_weights` is the usual diffusers name. */
+const FOUND_INSIDE_IDS: ReadonlySet<string> = new Set(['training:LoRA']);
+
 interface Index {
+  kinds: Map<string, KnowledgeEntry['kind']>;
   exact: Map<string, string>;
   folded: Map<string, string>;
   patterns: Array<{ re: RegExp; id: string }>;
@@ -29,7 +36,9 @@ function buildIndex(k: Knowledge): Index {
   const exact = new Map<string, string>();
   const folded = new Map<string, string>();
   const patterns: Index['patterns'] = [];
+  const kinds: Index['kinds'] = new Map();
   for (const e of k.entries) {
+    kinds.set(e.id, e.kind);
     for (const raw of e.tokens) {
       // The guide writes some tags with a leading or trailing separator ('UD-', '-Quality', 'MTP/').
       const token = raw.replace(/^[/\-.]+|[/\-.]+$/g, '');
@@ -46,7 +55,7 @@ function buildIndex(k: Knowledge): Index {
     for (const p of e.patterns)
       patterns.push({ re: new RegExp(`^(?:${p})$`, 'i'), id: e.id });
   }
-  return { exact, folded, patterns };
+  return { kinds, exact, folded, patterns };
 }
 
 function lookup(span: string, ix: Index): string | null {
@@ -56,6 +65,39 @@ function lookup(span: string, ix: Index): string | null {
     ix.patterns.find((p) => p.re.test(span))?.id ??
     null
   );
+}
+
+/** Quant names inside an underscore-joined run ('flux3_image_w6a8'), or null when it has none. The texts join back to the run. */
+function splitUnderscored(run: string, ix: Index): NamePart[] | null {
+  if (!run.includes('_')) return null;
+  const segments = run.split('_');
+  const parts: NamePart[] = [];
+  let plain = '';
+  const flush = (): void => {
+    if (plain) parts.push({ text: plain, entryId: null, looksLikeTag: false });
+    plain = '';
+  };
+  let i = 0;
+  while (i < segments.length) {
+    let end = segments.length;
+    let id: string | null = null;
+    for (; end > i; end--) {
+      id = lookup(segments.slice(i, end).join('_'), ix);
+      if (id !== null && (FOUND_INSIDE.has(ix.kinds.get(id)!) || FOUND_INSIDE_IDS.has(id))) break;
+      id = null;
+    }
+    if (id === null) {
+      plain += segments[i]! + (i < segments.length - 1 ? '_' : '');
+      i++;
+      continue;
+    }
+    flush();
+    parts.push({ text: segments.slice(i, end).join('_'), entryId: id, looksLikeTag: false });
+    if (end < segments.length) plain = '_';
+    i = end;
+  }
+  flush();
+  return parts.some((p) => p.entryId !== null) ? parts : null;
 }
 
 function looksLikeTag(run: string): boolean {
@@ -115,7 +157,8 @@ export function nameParts(text: string, k: Knowledge): NamePart[] {
       const id = lookup(span, ix);
       // A span is one part only when its runs cannot each be explained on their own ('UD-Q4_K_XL' is UD + Q4_K_XL).
       const runTexts = pieces.slice(i, end + 1).filter((p) => !p.sep);
-      const finer = runs > 1 && runTexts.every((p) => lookup(p.text, ix));
+      // A format the guide names whole is the exception: 'W8A8-INT8' means more than W8A8 and INT8 apart.
+      const finer = runs > 1 && (id === null || ix.kinds.get(id) !== 'format') && runTexts.every((p) => lookup(p.text, ix));
       if (id && !finer) {
         parts.push({ text: span, entryId: id, looksLikeTag: false });
         i = end + 1;
@@ -123,6 +166,12 @@ export function nameParts(text: string, k: Knowledge): NamePart[] {
       }
     }
     if (!matched) {
+      const inner = splitUnderscored(piece.text, ix);
+      if (inner !== null) {
+        parts.push(...inner);
+        i++;
+        continue;
+      }
       parts.push({
         text: piece.text,
         entryId: null,

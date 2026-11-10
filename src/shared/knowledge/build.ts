@@ -74,6 +74,7 @@ function firstSentence(s: string): string {
 /** Fills `into` from a second row with the same id. The row with a real meaning cell supplies section, title and text together. */
 function merge(into: KnowledgeEntry, from: KnowledgeEntry, intoReal: boolean, fromReal: boolean): boolean {
   for (const t of from.tokens) if (!into.tokens.includes(t)) into.tokens.push(t);
+  for (const p of from.patterns) if (!into.patterns.includes(p)) into.patterns.push(p);
   if (!intoReal && fromReal) {
     into.text = from.text;
     into.title = from.title;
@@ -171,6 +172,8 @@ export function buildKnowledge(markdown: string, aliases: Aliases): Knowledge {
 
   for (const a of aliases) {
     add({ id: a.id, kind: a.kind, tokens: a.tokens ?? [], patterns: a.patterns, title: a.title, text: a.text, section: a.section }, true);
+    // An alias for an entry the guide also has speaks for it: the same hint for every spelling.
+    Object.assign(byId.get(a.id)!, { title: a.title, text: a.text, section: a.section });
   }
   return { checkedOn, entries: [...byId.values()] };
 }

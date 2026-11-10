@@ -273,6 +273,18 @@ export class DownloadService {
     for (const [id, x] of this.previews) if (x.expiresAt <= now) this.previews.delete(id);
   }
 
+  /**
+   * The look-up, its expiry pushed DOWNLOAD_TTL_MS past now: a look-up expires only after that long unused, never while
+   * the user is still choosing files. Its listing growing old is safe: downloadStart checks the Hub commit again.
+   */
+  private useLookup(lookupId: string): Lookup | undefined {
+    const now = this.h.now();
+    this.prune(now);
+    const l = this.lookups.get(lookupId);
+    if (l !== undefined) l.expiresAt = now + DOWNLOAD_TTL_MS;
+    return l;
+  }
+
   private currentClient(): HubClient {
     if (this.current === null) throw new HubClientError({ code: 'OFFLINE', message: 'Download mode is not ready yet' });
     return this.current.client;
@@ -422,8 +434,7 @@ export class DownloadService {
    * reads nothing again). A transfer failure leaves that shape unknown and uncached; a 401/403 marks the look-up gated.
    */
   async downloadAdvice(lookupId: string): Promise<ApiResult<RepoAdviceDTO>> {
-    this.prune(this.h.now());
-    const l = this.lookups.get(lookupId);
+    const l = this.useLookup(lookupId);
     if (l === undefined) return fail('UNKNOWN_PLAN', LOOKUP_GONE_TEXT);
     const { listing, repo, view, shapes } = l;
     const byEtag = new Map(listing.files.map((f) => [f.etag, f]));
@@ -467,8 +478,7 @@ export class DownloadService {
 
   /** The look-up's groups with their cache states read again from the current scan (after a download); no Hub request. */
   async lookupGroups(lookupId: string): Promise<ApiResult<DownloadGroupDTO[]>> {
-    this.prune(this.h.now());
-    const l = this.lookups.get(lookupId);
+    const l = this.useLookup(lookupId);
     if (l === undefined) return fail('UNKNOWN_PLAN', LOOKUP_GONE_TEXT);
     const m = await this.h.model();
     if (!m.ok) return m;
@@ -497,10 +507,9 @@ export class DownloadService {
   }
 
   async downloadPreview(lookupId: string, groupKeys: readonly string[]): Promise<ApiResult<DownloadPreviewDTO>> {
-    const now = this.h.now();
-    this.prune(now);
-    const l = this.lookups.get(lookupId);
+    const l = this.useLookup(lookupId);
     if (l === undefined) return fail('UNKNOWN_PLAN', LOOKUP_GONE_TEXT);
+    const now = this.h.now();
     if (l.blocked !== null) return { ok: false, error: { ...l.blocked } };
     const paths = new Set<string>();
     for (const key of groupKeys) {

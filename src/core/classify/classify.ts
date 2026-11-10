@@ -1,5 +1,6 @@
 import { readTextSync } from '../fsx';
 import type { Group, GroupKind, Repo, RepoKind, RepoView, SnapshotFile } from '../types';
+import { diffusionSignal, loraTagged, type DiffusionSignal } from './diffusion-signal';
 import { targetOf } from './target';
 import { ggufStem, isDraft, isGguf, isMmproj, isShard, quantLabel, shardInfo } from './gguf-names';
 
@@ -51,6 +52,22 @@ function hasStringClassName(f: SnapshotFile, readText: ReadText): boolean {
   }
 }
 
+/** The repo's own config.json and README, null where absent. Null altogether when a config.json exists but cannot be read: it then gives no signal. */
+function signalTexts(repo: Repo, readText: ReadText): { config: string | null; readme: string | null } | null {
+  const root = currentFiles(repo).filter(isRoot);
+  const config = root.find((f) => f.relpath === 'config.json');
+  const readme = root.find((f) => f.relpath.toLowerCase() === 'readme.md');
+  const configText = config === undefined ? null : readText(config.linkPath);
+  if (config !== undefined && configText === null) return null;
+  return { config: configText, readme: readme === undefined ? null : readText(readme.linkPath) };
+}
+
+/** What the repo's own config.json and README say it is. */
+export function repoDiffusionSignal(repo: Repo, readText: ReadText = defaultReadText): DiffusionSignal | null {
+  const texts = signalTexts(repo, readText);
+  return texts === null ? null : diffusionSignal(texts.config, texts.readme);
+}
+
 export function detectKinds(repo: Repo, readText: ReadText = defaultReadText): RepoKind[] {
   const files = currentFiles(repo);
   const root = files.filter(isRoot);
@@ -66,16 +83,20 @@ export function detectKinds(repo: Repo, readText: ReadText = defaultReadText): R
 
   const configIsComponent = config !== undefined && hasStringClassName(config, readText);
   const weights = files.some((f) => /\.(safetensors|bin|pt|pth)$/.test(lower(f)));
-  const rootIndex = root.some((f) => /\.(safetensors|bin)\.index\.json$/.test(lower(f)));
-  if (config !== undefined && !configIsComponent && (weights || rootIndex)) kinds.push('transformers');
-
   const loraNamed = files.some((f) => /lora/i.test(baseName(f)));
-  if (hasAdapterConfig ||
-      (config === undefined && safetensors.every((f) => fileBytes(repo, f) < SMALL_ADAPTER_BYTES) && loraNamed)) {
-    kinds.push('adapter');
-  }
+  const loraByName = config === undefined && safetensors.every((f) => fileBytes(repo, f) < SMALL_ADAPTER_BYTES) && loraNamed;
+  // Only a repo that would otherwise be judged as a language model or a bare checkpoint; the other kinds already say what they are.
+  const texts = repo.type === 'model' && kinds.length === 0 && !hasAdapterConfig && !loraByName && !configIsComponent
+    && files.some((f) => /\.(safetensors|sft|ckpt|bin|pt|pth)$/.test(lower(f))) ? signalTexts(repo, readText) : null;
+  const loraByTag = texts !== null && loraTagged(texts.config, texts.readme);
+  const diffusion = texts !== null && !loraByTag && diffusionSignal(texts.config, texts.readme) !== null;
+  if (diffusion) kinds.push('diffusion');
+  const rootIndex = root.some((f) => /\.(safetensors|bin)\.index\.json$/.test(lower(f)));
+  if (!diffusion && !loraByTag && config !== undefined && !configIsComponent && (weights || rootIndex)) kinds.push('transformers');
 
-  if (config === undefined && !hasAdapterConfig && root.some((f) => /\.(safetensors|ckpt|sft)$/.test(lower(f)))) {
+  if (hasAdapterConfig || loraByName || loraByTag) kinds.push('adapter');
+
+  if (!diffusion && config === undefined && !hasAdapterConfig && root.some((f) => /\.(safetensors|ckpt|sft)$/.test(lower(f)))) {
     kinds.push('single-file');
   }
   if (configIsComponent && !hasModelIndex) kinds.push('component');
@@ -136,6 +157,8 @@ const TOKENIZER_CONFIG_NAMES = new Set([
   'config.json', 'generation_config.json', 'adapter_config.json', 'preprocessor_config.json',
   'special_tokens_map.json', 'added_tokens.json', 'merges.txt', 'chat_template.jinja', 'chat_template.json',
 ]);
+/** A per-file weight group's label: one per model file, with the shards and index of one checkpoint kept together. */
+const weightFileLabel = (relpath: string): string => relpath.replace(/\.index\.json$/i, '').replace(/-\d+-of-\d+(?=\.[^./]+$)/, '');
 const isWeights = (f: SnapshotFile): boolean => WEIGHT_EXT.test(f.relpath) || lower(f).endsWith('.index.json');
 const isTokenizerConfig = (f: SnapshotFile): boolean => {
   const b = baseName(f);
@@ -177,6 +200,9 @@ function buildGroups(repo: Repo, kinds: RepoKind[], readText: ReadText): Group[]
   const unreadableIndex = components === null && kinds.includes('diffusers');
   // Datasets and spaces skip the buckets and go straight to other-by-folder (assets still apply).
   const bucketsOk = repo.type === 'model' && !unreadableIndex && kinds.some((k) => k === 'transformers' || k === 'adapter' || k === 'component');
+  // A diffusion repo or a LoRA pack is usually a bundle of unrelated files, each removed and sized on its own.
+  // A PEFT adapter is one model: its weights only work with its adapter_config.json.
+  const perFile = kinds[0] === 'diffusion' || (kinds[0] === 'adapter' && !currentFiles(repo).some((f) => f.relpath === 'adapter_config.json'));
   const acc = new Map<string, { kind: GroupKind; label: string; files: SnapshotFile[]; locked: boolean }>();
   const put = (kind: GroupKind, label: string, f: SnapshotFile, locked = false): void => {
     const key = `${kind}:${label}`;
@@ -202,6 +228,8 @@ function buildGroups(repo: Repo, kinds: RepoKind[], readText: ReadText): Group[]
     // 5. root-file
     if (isRoot(f) && rootFileOk && ROOT_CKPT.test(f.relpath)) { put('root-file', f.relpath, f); continue; }
     if (unreadableIndex && f.relpath === 'model_index.json') { put('other', 'model_index.json', f, true); continue; }
+    // 5b. per-file weights, wherever they sit
+    if (perFile && isWeights(f)) { put('root-file', weightFileLabel(f.relpath), f); continue; }
     // 6. weights and tokenizer-config buckets
     if (bucketsOk && isWeights(f)) { put('weights', 'weights', f); continue; }
     if (bucketsOk && isTokenizerConfig(f)) { put('tokenizer-config', 'tokenizer and config', f); continue; }

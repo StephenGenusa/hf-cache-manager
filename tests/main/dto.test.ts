@@ -84,6 +84,7 @@ test('badgeFor covers every repo kind', () => {
   expect(badgeFor(v(['transformers']))).toBe('Transformers');
   expect(badgeFor(v(['adapter']))).toBe('LoRA adapter');
   expect(badgeFor(v(['single-file']))).toBe('Single-file checkpoint');
+  expect(badgeFor(v(['diffusion']))).toBe('Diffusion / ComfyUI');
   expect(badgeFor(v(['component']))).toBe('VAE / component');
   expect(badgeFor(v(['dataset']))).toBe('Dataset');
   expect(badgeFor(v(['space']))).toBe('Space');

@@ -38,7 +38,7 @@ export const shortHash = (h: string): string => h.slice(0, 4) + '…' + h.slice(
 const plural = (n: number, word: string): string => `${n} ${word}${n === 1 ? '' : 's'}`;
 
 const BADGE: Record<Exclude<RepoKind, 'gguf' | 'transformers'>, string> = {
-  diffusers: 'Diffusers pipeline', adapter: 'LoRA adapter', 'single-file': 'Single-file checkpoint',
+  diffusers: 'Diffusers pipeline', adapter: 'LoRA adapter', 'single-file': 'Single-file checkpoint', diffusion: 'Diffusion / ComfyUI',
   component: 'VAE / component', dataset: 'Dataset', space: 'Space', unknown: 'Unknown',
 };
 

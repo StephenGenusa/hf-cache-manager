@@ -17,7 +17,7 @@ it('unions match the contract', () => {
   expectTypeOf<ExecErrorCode>().toEqualTypeOf<'STALE' | 'EXPIRED' | 'USED' | 'UNKNOWN_PLAN' | 'FINGERPRINT' | 'CONFIRM' | 'CONTAINMENT' | 'LOCKED' | 'ACTIVE_DOWNLOAD' | 'IO' | 'ROLLED_BACK'>();
   expectTypeOf<FreedReason>().toEqualTypeOf<'only-link' | 'hardlink-others-remain' | 'hardlink-all-planned' | 'store-shared' | 'store-unreferenced' | 'store-uncertain' | 'link-only' | 'plain-file' | 'special-file'>();
   expectTypeOf<GroupKind>().toEqualTypeOf<'quant' | 'mmproj' | 'draft' | 'component' | 'weights' | 'tokenizer-config' | 'assets' | 'superseded' | 'root-file' | 'other'>();
-  expectTypeOf<RepoKind>().toEqualTypeOf<'gguf' | 'diffusers' | 'transformers' | 'adapter' | 'single-file' | 'component' | 'dataset' | 'space' | 'unknown'>();
+  expectTypeOf<RepoKind>().toEqualTypeOf<'gguf' | 'diffusers' | 'transformers' | 'adapter' | 'single-file' | 'diffusion' | 'component' | 'dataset' | 'space' | 'unknown'>();
 });
 it('FileFacts and SafeRoots shapes', () => {
   expectTypeOf<FileFacts>().toEqualTypeOf<{ dev: number; ino: number; size: number; mtimeMs: number; nlink: number; isSymlink: boolean; isDirectory: boolean; isFile: boolean; linkTarget?: string }>();

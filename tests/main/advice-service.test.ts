@@ -528,3 +528,21 @@ test('a blob that is not a regular file (a FIFO) is never opened', async () => {
   const port = createCorePort({ userDataDir: fx.root, env: fx.env, home: fx.home, offline: true, fs: fifoFs });
   expect(await port.readGgufHeaders([s1])).toBeNull();
 });
+
+test('a ComfyUI repo gets the packaged-for note and no format advice, end to end from its config.json', async () => {
+  const config = JSON.stringify({ quantization: 'w6a8_int8', format: 'w6a8', weight_bits: 6, activation_bits: 8, loader: 'comfyui', library: 'comfy-kitchen' });
+  const fx = await buildFixture({ repos: [{ id: 'realrebelai/Rebels_w6a8s', snapshots: [{ files: [
+    { path: 'config.json', blob: { key: 'cfg', content: config } },
+    { path: 'FLUX/flux3_image_klein_w6a8.safetensors', blob: { key: 'flux', bytes: 1000 } },
+  ] }] }] }) as Fixture & { userDataDir: string };
+  disposers.push(fx);
+  fx.userDataDir = join(fx.root, 'user-data');
+  await mkdir(fx.userDataDir, { recursive: true });
+  const { svc } = harness(fx, { detectMachine: () => Promise.resolve(NVIDIA_24) });
+  unwrap(await svc.redetectMachine());
+  unwrap(await svc.scan());
+  expect(unwrap(await svc.repoDetail('realrebelai/Rebels_w6a8s')).kinds[0]).toBe('diffusion');
+  const adv = unwrap(await svc.advice('realrebelai/Rebels_w6a8s'));
+  expect(adv.repoLine).toMatchObject({ tint: null, reason: 'Packaged for ComfyUI, not for language-model tools' });
+  expect(adv.groups.map((g) => g.key)).toContain('root-file:FLUX/flux3_image_klein_w6a8.safetensors');
+});

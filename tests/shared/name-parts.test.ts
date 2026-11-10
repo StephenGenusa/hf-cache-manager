@@ -1,4 +1,4 @@
-import { expect, test } from "vitest";
+import { describe, expect, test } from "vitest";
 import { KNOWLEDGE } from "../../src/shared/knowledge";
 import { nameParts } from "../../src/shared/knowledge/name-parts";
 
@@ -246,4 +246,84 @@ test("the index is built once per Knowledge object", () => {
   expect(idOf("AAA", k)).toBe("a");
   entries.push(mk("b", "size", ["BBB"]));
   expect(idOf("BBB", k)).toBeNull();
+});
+
+describe("W#A# quantization names", () => {
+  const part = (name: string, text: string) =>
+    nameParts(name, KNOWLEDGE).find((p) => p.text === text);
+
+  test.each(["W6A8", "W4A8", "W8A8", "w6a8", "w4a8s", "MXFP6", "INT6"])(
+    "%s has a hint",
+    (tag) => expect(ids(`Foo-${tag}`)).toEqual([tag]),
+  );
+  test("lowercase names of known formats have a hint", () => {
+    expect(part("Foo-w4a16", "w4a16")?.entryId).toBe("format:W4A16");
+    expect(part("Foo-int8", "int8")?.entryId).toBe("format:INT4");
+  });
+  test("the guide's own entry beats the general rule", () =>
+    expect(part("Foo-W4A16", "W4A16")?.entryId).toBe("format:W4A16"));
+  test("a two-part guide name stays one part", () => {
+    expect(part("Foo-W8A8-INT8", "W8A8-INT8")?.entryId).toBe("format:W8A8-INT8");
+    expect(part("Foo-W8A8-FP8", "W8A8-FP8")?.entryId).toBe("format:W8A8-FP8");
+  });
+  test("W and A alone are not quant names", () => {
+    expect(ids("Foo-W6")).toEqual([]);
+    expect(ids("Foo-A8")).toEqual([]);
+    expect(ids("Foo-W6A")).toEqual([]);
+  });
+  test("a word that merely contains the pattern is not one", () =>
+    expect(ids("Foo-XW6A8Y")).toEqual([]));
+});
+
+describe("underscore-joined names", () => {
+  const texts = (s: string) => nameParts(s, KNOWLEDGE).map((p) => p.text);
+
+  test.each([
+    ["FLUX/flux3_image_klein_w6a8.safetensors", ["w6a8"]],
+    ["realrebelai/Rebels_w6a8s", ["w6a8s"]],
+    ["QWEN/qwen_image_2.1_w6a8.safetensors", ["w6a8"]],
+    ["qwen_w6a8_lightning.safetensors", ["w6a8"]],
+    ["model_Q4_K_M.gguf", ["Q4_K_M"]],
+    ["flux_w8a8_int8.safetensors", ["w8a8", "int8"]],
+  ])("%s", (name, want) => {
+    expect(ids(name)).toEqual(want);
+    expect(texts(name).join("")).toBe(name);
+  });
+  test("only quant names are found inside an underscore name", () =>
+    expect(ids("some_model_it")).toEqual([]));
+  test("a tag-like name with no quant in it stays one unknown part", () =>
+    expect(nameParts("XQ_9", KNOWLEDGE)).toEqual([
+      { text: "XQ_9", entryId: null, looksLikeTag: true },
+    ]));
+  test("the text around a found name is not called an unknown tag", () =>
+    expect(
+      nameParts("Rebels_w6a8s", KNOWLEDGE).find((p) => p.text === "Rebels_"),
+    ).toMatchObject({ entryId: null, looksLikeTag: false }));
+});
+
+describe("LoRA names", () => {
+  const LORA = "training:LoRA";
+  const idOfPart = (name: string, text: string) =>
+    nameParts(name, KNOWLEDGE).find((p) => p.text === text)?.entryId;
+
+  test.each([
+    ["style-LoRA-v2", "LoRA"],
+    ["wan-lora-high", "lora"],
+    ["Foo-LORA", "LORA"],
+    ["Foo-loras", "loras"],
+    ["pytorch_lora_weights.safetensors", "lora"],
+    ["flux_lora.safetensors", "lora"],
+  ])("%s has the LoRA hint", (name, text) => {
+    expect(idOfPart(name, text)).toBe(LORA);
+    expect(nameParts(name, KNOWLEDGE).map((p) => p.text).join("")).toBe(name);
+  });
+  test("a word that only contains lora is not one", () => {
+    expect(ids("Foo-explorer-LoRaWAN-floral")).toEqual([]);
+    expect(ids("floral_explorer")).toEqual([]);
+  });
+  test("every spelling gets one hint that says a base model is needed", () => {
+    const e = KNOWLEDGE.entries.find((x) => x.id === LORA)!;
+    expect(e.text).toMatch(/base model/);
+    expect(KNOWLEDGE.entries.filter((x) => x.tokens.includes("LoRA") || x.patterns.some((p) => /lora/i.test(p)))).toHaveLength(1);
+  });
 });

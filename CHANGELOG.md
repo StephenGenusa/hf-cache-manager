@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.0.1 — 2026-11-10
+
+- **Diffusion and ComfyUI repos:** a new kind, "Diffusion / ComfyUI", for repos whose model card or configs say they
+  are a diffusion model or packaged for ComfyUI, with advice worded to match.
+- **Name hints:** `W#A#`, `MXFP#`, `INT#` and `LoRA` in file names are explained.
+- **Fix:** a download look-up no longer expires while you are still choosing files. When a look-up again is needed,
+  the footer says why (the look-up expired, the cache changed, or the repo changed on the Hub) instead of always
+  saying the repo changed.
+
 ## 1.0.0 — 2026-10-31
 
 First release.

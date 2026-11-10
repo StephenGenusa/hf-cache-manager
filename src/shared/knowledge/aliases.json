@@ -46,5 +46,37 @@
     "text": "_XL is a size label for a larger mix of a K-quant, not a llama.cpp type. With the UD- prefix it is Unsloth's own label, which Unsloth does not define in its docs. On bartowski files (Q3_K_XL, Q6_K_L style) it means the standard quant with the embedding and output weights at Q8_0.",
     "section": "recipes-that-make-normal-gguf-files",
     "patterns": ["Q\\d_K_XL"]
+  },
+  {
+    "id": "format:W#A#",
+    "kind": "format",
+    "title": "W#A#: weight and activation bits",
+    "text": "W is the number of bits used to store the weights. A is the number of bits used for the activations, the values passed between layers, during the math. The label does not say which tool loads the file: ComfyUI and vLLM models both use it, and it may need a specific loader. A trailing s is a plural.",
+    "section": "73-reading-wa-names",
+    "patterns": ["W\\d+A\\d+s?"]
+  },
+  {
+    "id": "format:MXFP#",
+    "kind": "format",
+    "title": "MXFP#: MX floating point",
+    "text": "Microscaling floating-point weights at the stated number of bits. Check config.json for the activation width.",
+    "section": "73-reading-wa-names",
+    "patterns": ["MXFP\\d+"]
+  },
+  {
+    "id": "format:INT#",
+    "kind": "format",
+    "title": "INT#: integer weights",
+    "text": "Usually integer weights at the stated number of bits. Check config.json to be sure.",
+    "section": "73-reading-wa-names",
+    "patterns": ["INT\\d+"]
+  },
+  {
+    "id": "training:LoRA",
+    "kind": "training",
+    "title": "LoRA: small add-on to a base model",
+    "text": "Low-Rank Adaptation. A small add-on that changes what a base model does. It cannot run on its own: load it with the base model it was trained for.",
+    "section": "training-tags",
+    "patterns": ["loras?"]
   }
 ]

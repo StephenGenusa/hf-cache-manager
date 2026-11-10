@@ -7,6 +7,7 @@ import {
   type Platform, type Support, type Tool,
 } from '../../shared/knowledge/rules';
 import type { Knowledge } from '../../shared/knowledge/types';
+import type { DiffusionSignal } from '../classify/diffusion-signal';
 import type { RepoKind } from '../types';
 import { kvCacheBytes } from './shape';
 import type {
@@ -420,6 +421,14 @@ function weightsLine(c: Ctx): GroupAdvice {
     : advice(key, fmt.tint, fmt.alone, sentences(`${size.reason}.`, fmt.sentence), size.facts);
 }
 
+/** No tint and no fit verdict: the language-model sizing does not apply, and these loaders can offload to system memory. */
+function diffusionLine(signal: DiffusionSignal): GroupAdvice {
+  const after = 'Your language-model tools do not apply, so there is no tool or memory advice. Each model file is listed with its own size.';
+  return signal === 'comfyui'
+    ? advice('repo', null, 'Packaged for ComfyUI, not for language-model tools', `This repo says it is packaged for ComfyUI. ${after}`)
+    : advice('repo', null, 'Diffusion model, not for language-model tools; runs in an app such as ComfyUI', `This repo says it is a diffusion model. ${after}`);
+}
+
 function repoLine(c: Ctx): GroupAdvice | null {
   const { repoId, format, tools, machine, repoKind } = c.input;
   const key = 'repo';
@@ -428,6 +437,7 @@ function repoLine(c: Ctx): GroupAdvice | null {
     const reason = s.fine ? s.reason.replace(/\)$/, '; runs in a diffusers app such as ComfyUI)') : s.reason;
     return advice(key, s.tint, reason, s.explanation, s.facts);
   }
+  if (repoKind === 'diffusion') return diffusionLine(c.input.diffusionSignal ?? 'diffusion');
   if (!LM_KINDS.has(repoKind)) return null;
   if (tools.length === 0) return format === 'gguf' || format === 'unknown' ? null : advice(key, null, NO_TOOLS);
   const nameTokens = tokens(repoId.slice(repoId.lastIndexOf('/') + 1));

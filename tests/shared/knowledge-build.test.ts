@@ -46,3 +46,9 @@ test.skipIf(GUIDE === '' || !existsSync(GUIDE))('the committed JSON is up to dat
   const md = (await readFile(GUIDE, 'utf8')).replace(/\r\n/g, '\n');
   expect(buildKnowledge(md, aliases)).toEqual(KNOWLEDGE);
 });
+test('an alias for a guide entry adds its patterns and its text replaces the row text', () => {
+  const md = '## 9. Glossary\n\n### Training tags\n\n| Tag | Meaning |\n|---|---|\n| `LoRA` | Guide text. |\n| `DPO` | Other. |\n';
+  const built = buildKnowledge(md, [{ id: 'training:LoRA', kind: 'training', title: 'New title', text: 'New text.', section: 's', patterns: ['loras?'] }]);
+  expect(built.entries.find((e) => e.id === 'training:LoRA')).toMatchObject({ tokens: ['LoRA'], patterns: ['loras?'], title: 'New title', text: 'New text.' });
+  expect(built.entries.find((e) => e.id === 'training:DPO')!.text).toBe('Other.');
+});

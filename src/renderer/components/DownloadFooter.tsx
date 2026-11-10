@@ -42,7 +42,8 @@ export function DownloadFooter({ lookup, gatedNote, advicePending, lookingUp, on
   const disk = useDiskInfo().data;
   const [preview, setPreview] = useState<{ sig: string; data: DownloadPreviewDTO } | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [stale, setStale] = useState(false);
+  // the server's reason a look-up again is needed (expired, cache changed, Hub commit moved), or null
+  const [stale, setStale] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   // only keys of the current look-up's groups can ever count or be previewed
@@ -53,7 +54,7 @@ export function DownloadFooter({ lookup, gatedNote, advicePending, lookingUp, on
 
   // The fit check: a preview of the current ticks (nothing is written). Download asks again so its fingerprint is fresh.
   useEffect(() => {
-    setStale(false);
+    setStale(null);
     setError(null);
     if (lookup === null || validKeys.length === 0) { setPreview(null); return; }
     let live = true;
@@ -61,7 +62,7 @@ export function DownloadFooter({ lookup, gatedNote, advicePending, lookingUp, on
       void api.downloadPreview(lookup.lookupId, validKeys).then((r) => {
         if (!live) return;
         if (r.ok) setPreview({ sig, data: r.data });
-        else if (STALE_CODES.has(r.error.code)) setStale(true);
+        else if (STALE_CODES.has(r.error.code)) setStale(r.error.message);
         else { setPreview(null); setError(r.error.message); }
       }, (e: unknown) => { if (live) setError(errText(e)); });
     }, 250);
@@ -88,13 +89,13 @@ export function DownloadFooter({ lookup, gatedNote, advicePending, lookingUp, on
     try {
       const p = await api.downloadPreview(lookup.lookupId, validKeys);
       if (!p.ok) {
-        if (STALE_CODES.has(p.error.code)) setStale(true); else setError(p.error.message);
+        if (STALE_CODES.has(p.error.code)) setStale(p.error.message); else setError(p.error.message);
         return;
       }
       if (!p.data.fits) { setPreview({ sig, data: p.data }); return; }
       const s = await api.downloadStart(p.data.previewId, p.data.fingerprint);
       if (!s.ok) {
-        if (STALE_CODES.has(s.error.code)) setStale(true); else setError(s.error.message);
+        if (STALE_CODES.has(s.error.code)) setStale(s.error.message); else setError(s.error.message);
         return;
       }
       toast({ title: `Download started: ${lookup.repoId}`, tone: 'success' });
@@ -112,15 +113,15 @@ export function DownloadFooter({ lookup, gatedNote, advicePending, lookingUp, on
         {`Selected: ${totals.files} ${totals.files === 1 ? 'file' : 'files'} · requires ${formatBytes(requires)}`}
         {disk !== undefined && ` · ${formatBytes(disk.freeBytes)} free on ${disk.pathDisplay}`}
       </span>
-      {stale && (
+      {stale !== null && (
         <span role="alert" data-testid="stale-note" className="flex items-center gap-2 text-warning">
-          The repo changed — look up again
+          {stale}
           <Button onClick={onLookupAgain}>Look up again</Button>
         </span>
       )}
       <span className="ml-auto flex items-center gap-2">
         {reason !== null && <span data-testid="download-reason" className="text-xs text-muted-foreground">{reason}</span>}
-        <Button data-testid="download-button" variant="primary" size="md" disabled={reason !== null || busy || stale} onClick={() => void start()}>
+        <Button data-testid="download-button" variant="primary" size="md" disabled={reason !== null || busy || stale !== null} onClick={() => void start()}>
           {requires > 0 ? `Download ${formatBytes(requires)}` : 'Download'}
         </Button>
       </span>

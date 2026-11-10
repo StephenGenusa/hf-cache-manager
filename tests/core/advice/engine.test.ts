@@ -435,6 +435,26 @@ describe('repo line from the format', () => {
   });
 });
 
+describe('diffusion repos', () => {
+  const NOTE = { repoKind: 'diffusion', format: 'unknown', repoId: 'o/Rebels_w6a8s' } as const;
+  const line = (o: Partial<AdviceInput>) => advise(input([], { ...NOTE, ...o })).repoLine!;
+
+  it('a ComfyUI signal says packaged for ComfyUI, not diffusion model', () => {
+    expect(line({ diffusionSignal: 'comfyui' })).toMatchObject({ tint: null, reason: 'Packaged for ComfyUI, not for language-model tools' });
+  });
+  it('a diffusion signal says diffusion model', () => {
+    expect(line({ diffusionSignal: 'diffusion' })).toMatchObject({ tint: null, reason: 'Diffusion model, not for language-model tools; runs in an app such as ComfyUI' });
+  });
+  it('is never red, whatever the tools, and needs no tool chosen', () => {
+    for (const tools of [[], TOOLS]) expect(line({ tools, diffusionSignal: 'comfyui' }).tint).toBeNull();
+  });
+  it('gives no fit verdict on a repo far bigger than the card', () => {
+    const r = line({ diffusionSignal: 'comfyui', repoWeights: { bytes: 60 * GB, note: null } });
+    expect(r.tint).toBeNull();
+    expect(r.facts).toEqual([]);
+  });
+});
+
 describe('missing facts', () => {
   it('no GPU memory: no size tints, says what to set', () => {
     const r = run([quant('Q6_K', 16.4 * GB, shape(P20)), quant('Q4_K_M', 11.5 * GB, shape(P20))], { machine: { ...NVIDIA, gpuBytes: null } });
