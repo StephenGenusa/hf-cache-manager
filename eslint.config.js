@@ -14,7 +14,11 @@ const BANNED_MOD_RE = `/^((node:)?child_process|(${BANNED_PKGS.join('|')})(\\/.*
 
 // SafeFs is the only mutator: node fs may be imported in src/ only by these files.
 // AppLock and Journal need node:fs/promises ('wx' create, append + datasync) inside their own folders.
-const FS_IMPORT_ALLOWLIST = ['src/core/fsx.ts', 'src/core/safe-fs.ts', 'src/core/exec/lock.ts', 'src/core/exec/journal.ts'];
+// The transfer drive writer creates and appends files on a drive outside every SafeFs root (FAT/exFAT keep no stable
+// inode for SafeFs to pin); it has no delete, rename or truncate (tests/safety/transfer-writer.test.ts).
+const FS_IMPORT_ALLOWLIST = [
+  'src/core/fsx.ts', 'src/core/safe-fs.ts', 'src/core/exec/lock.ts', 'src/core/exec/journal.ts', 'src/core/transfer/drive-writer.ts',
+];
 // Files that may call nodeFs mutators directly. Not extended by the fs import allowlist.
 const NODEFS_MUTATOR_EXEMPT = ['src/core/fsx.ts', 'src/core/safe-fs.ts'];
 const FS_MSG = 'node fs may only be imported in src/ by the FS_IMPORT_ALLOWLIST files; mutate through SafeFs.';

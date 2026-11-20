@@ -31,6 +31,7 @@
   - [Recently Deleted](#recently-deleted)
   - [Download mode](#download-mode)
   - [Sync with LM Studio and Ollama](#sync-with-lm-studio-and-ollama)
+  - [Moving models between computers](#moving-models-between-computers)
 - [Configuration](#configuration)
 - [Privacy and network use](#privacy-and-network-use)
 - [Known limitations](#known-limitations)
@@ -72,6 +73,8 @@ human terms, and turns "delete the biggest folder and hope" into a reviewed, rev
   them.
 - **Sync with LM Studio and Ollama.** One button rebuilds the symlink views those apps read, with a preview first;
   your own files in those folders are never touched.
+- **Move models on a USB drive.** Export models from the library to a drive, then load them into the cache of another
+  computer. It works between Linux, Windows and macOS, and on a drive with any file system both computers can read.
 - **Plays well with others.** The cache stays a standard `huggingface_hub` cache. The app reads and writes the same
   `config.toml` and sync state as the `hf-xfer` CLI from [hf-hub-utilities](https://github.com/StephenGenusa/hf-hub-utilities), so either can be used at any time.
 
@@ -147,6 +150,47 @@ If you keep LM Studio or Ollama pointed at your Hugging Face models through syml
 from [hf-hub-utilities](https://github.com/StephenGenusa/hf-hub-utilities) builds), **Sync LM Studio + Ollama** shows exactly which links it will add and remove, then applies them. It only
 removes links it created itself; anything you put in those folders by hand is left alone.
 
+### Moving models between computers
+
+You can copy models to a USB drive on one computer and load them into the cache on another computer. Neither computer
+needs a network connection for this.
+
+To export, tick the groups you want in the library and choose **Export to drive…**. The dialog lists the drives that
+are connected and the free space on each one. After you pick a drive, the dialog shows how much the selection needs.
+If the selection does not fit, the dialog says how much is needed and how much is free, and nothing is written.
+
+To load, switch to **Download** on the other computer and choose **Load from USB…**. The app looks at each connected
+drive for exported models and lists the models it finds. Choose a model to see its files with the same advice as a Hub
+look-up, tick what you want, and choose **Load**.
+
+How the app treats the drive:
+
+- The app writes only inside a folder named `hf-cache-manager-transfer` at the top of the drive. It does not change
+  any other file on the drive.
+- The app only adds files to that folder. It never deletes or replaces a file there. To free space, delete the folder
+  or files in it yourself.
+- The app does not format the drive and does not need a particular file system. Each large file is stored in parts of
+  1 GB, so a FAT32 drive works even though FAT32 cannot hold one file larger than 4 GB.
+- A file that is already on the drive is not copied again. If an export stops early, the next export of the same model
+  continues from where it stopped.
+- Progress is in the **Downloads** panel, where you can also cancel an export.
+
+How the app treats the cache on the second computer:
+
+- A load copies the files into the cache. Nothing in the cache points to the drive, so you can remove the drive when
+  the load is done.
+- Each file is checked against its Hugging Face hash before it enters the cache, the same check a download gets. A file
+  that was damaged on the drive fails this check and is not added.
+- If the cache already has the same branch of the model at a different revision, the app leaves that branch as it is.
+  The loaded files are added as a separate revision.
+- The app does not remember the drive. A load that was interrupted is not resumed on its own after a restart. Choose
+  **Load from USB…** again and the app continues from the partial file.
+
+The drive must use a file system that both computers can read and write. exFAT works on Linux, Windows and macOS.
+Windows and macOS cannot read a Linux ext4 drive without extra software.
+
+A model that needs you to accept terms on Hugging Face keeps those terms when you copy it on a drive.
+
 ## Configuration
 
 **Cache location.** Resolved like `huggingface_hub`: `HF_HUB_CACHE` (or `HUGGINGFACE_HUB_CACHE`), else
@@ -166,8 +210,15 @@ root = "~/.ollama/models"
 
 Without this file the app works as a cache manager and Sync stays off.
 
-**Offline.** `HF_HUB_OFFLINE=1` turns download mode off. `HFCM_OFFLINE=1` also keeps Sync from contacting the Ollama
-registry; it then links only what it can build from the cache.
+**Offline.** `HF_HUB_OFFLINE=1` turns download mode off. **Load from USB…** still works, because it reads only the
+drive. `HFCM_OFFLINE=1` also keeps Sync from contacting the Ollama registry; it then links only what it can build from
+the cache.
+
+**Transfer drives.** The app finds drives where each system mounts them: every drive letter except the system drive
+on Windows, `/Volumes` on macOS, and `/media/<user>`, `/run/media/<user>`, `/media` and `/mnt` on Linux. The list can
+include internal disks, because the app cannot tell them from USB drives. If your drive is mounted somewhere else, set
+`HFCM_TRANSFER_ROOTS` to its folder before you start the app. You can give several folders, separated by `:` on Linux
+and macOS or `;` on Windows. The app then uses only those folders.
 
 **GPU detection.** `HFCM_NO_GPU_DETECT=1` skips the `nvidia-smi` call; enter the GPU under **Settings → Advice**
 instead.
@@ -184,6 +235,8 @@ There is no account, no telemetry and no update check. The app goes online only:
   the files you choose;
 - during Sync, to Hugging Face's Ollama registry endpoint, for the manifest of a model Ollama will link to.
 
+Export to drive and Load from USB never go online; they read and write only the cache and the drive.
+
 GPU detection runs `nvidia-smi` locally when it is installed. Settings and the download queue are kept in the app's
 own settings folder; nothing leaves the machine.
 
@@ -198,6 +251,12 @@ own settings folder; nothing leaves the machine.
   cached, the same way `huggingface_hub` treats them.
 - **Deleting every file of a branch or tag's snapshot** can leave that ref pointing at a snapshot that no longer exists.
 - **The "Files only in <ref>" group label** can be inaccurate when files are shared between refs.
+- **The system drive is never offered for export on Windows.** Use a second drive.
+- **Loading from a drive needs an existing cache folder,** as downloading does. If the cache folder does not exist yet,
+  create it or run one `hf download` first.
+- **A plain copy in a cache without symlinks may get a different blob name.** If the cache holds a file only as a plain
+  copy with no blob beside it, the export names the file by its SHA-256. The file's content and its path in the model
+  are correct on the other computer. A later look-up of that model on the Hub may list a small file as not cached.
 - **`HF_HUB_OFFLINE=1`** turns off download mode but not Sync's Ollama registry lookups; use `HFCM_OFFLINE=1` for that
   (see [Configuration](#configuration)).
 

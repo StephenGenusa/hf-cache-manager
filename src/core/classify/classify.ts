@@ -1,3 +1,4 @@
+import { basename, dirname, join, resolve } from 'node:path';
 import { readTextSync } from '../fsx';
 import type { Group, GroupKind, Repo, RepoKind, RepoView, SnapshotFile } from '../types';
 import { diffusionSignal, loraTagged, type DiffusionSignal } from './diffusion-signal';
@@ -19,21 +20,55 @@ const isRoot = (f: SnapshotFile): boolean => !f.relpath.includes('/');
 const lower = (f: SnapshotFile): string => f.relpath.toLowerCase();
 const baseName = (f: SnapshotFile): string => f.relpath.slice(f.relpath.lastIndexOf('/') + 1);
 
-/** Blob payload size of a snapshot file: 0 if missing/dangling or an unrecognised link; plain files use their own size. */
+const HEX40 = /^[0-9a-f]{40}$/;
+const gitBlobCache = new WeakMap<Repo, Map<string, number>>();
+
+/**
+ * The repo's blobs/<40 hex> files by path, with their sizes. huggingface_hub names the blob of a file that is not LFS
+ * by its git id (40 hex); the scanner keeps `blobs` for the 64-hex (LFS) ones and lists these among the other files.
+ */
+function gitBlobs(repo: Repo): Map<string, number> {
+  let m = gitBlobCache.get(repo);
+  if (m === undefined) {
+    m = new Map();
+    const dir = join(repo.folder, 'blobs');
+    for (const o of repo.otherFiles) {
+      if (o.facts.isFile && !o.facts.isSymlink && dirname(o.path) === dir && HEX40.test(basename(o.path))) m.set(o.path, o.facts.size);
+    }
+    gitBlobCache.set(repo, m);
+  }
+  return m;
+}
+
+/** The blobs/<40 hex> file a snapshot link leads to (one hop, as the scanner follows links), or null. */
+function gitBlobOf(repo: Repo, f: SnapshotFile): { path: string; size: number } | null {
+  if (f.blobEtag !== null || !f.facts.isSymlink || f.facts.linkTarget === undefined) return null;
+  const path = resolve(dirname(f.linkPath), f.facts.linkTarget);
+  const size = gitBlobs(repo).get(path);
+  return size === undefined ? null : { path, size };
+}
+
+/**
+ * Blob payload size of a snapshot file: 0 if missing/dangling or an unrecognised link; a link to a blob named by a git
+ * id (a file that is not LFS) has that blob's size; plain files use their own size.
+ */
 export function fileBytes(repo: Repo, f: SnapshotFile): number {
   if (f.blobEtag !== null) {
     const b = repo.blobs[f.blobEtag];
     return b === undefined || b.dangling ? 0 : b.size;
   }
+  const git = gitBlobOf(repo, f);
+  if (git !== null) return git.size;
   return f.facts.isFile && !f.facts.isSymlink ? f.facts.size : 0;
 }
 
-/** Bytes of a set of files: each blob once (by etag), each plain file once (by dev:ino). */
+/** Bytes of a set of files: each blob once (by etag, or by path for a git-id blob), each plain file once (by dev:ino). */
 export function groupBytes(repo: Repo, files: SnapshotFile[]): number {
   const seen = new Set<string>();
   let total = 0;
   for (const f of files) {
-    const id = f.blobEtag !== null ? `b:${f.blobEtag}` : `p:${f.facts.dev}:${f.facts.ino}`;
+    const git = gitBlobOf(repo, f);
+    const id = f.blobEtag !== null ? `b:${f.blobEtag}` : git !== null ? `g:${git.path}` : `p:${f.facts.dev}:${f.facts.ino}`;
     if (seen.has(id)) continue;
     seen.add(id);
     total += fileBytes(repo, f);
@@ -282,9 +317,11 @@ function sortGroups(groups: Group[]): Group[] {
 
 export function classifyRepo(repo: Repo, readText: ReadText = defaultReadText): RepoView {
   const kinds = detectKinds(repo, readText);
-  // Every repo blob once (linked, shared or orphaned; dangling counts 0), plus plain snapshot files once by dev:ino.
+  // Every repo blob once (linked, shared or orphaned, LFS or named by a git id; dangling counts 0), plus plain snapshot
+  // files once by dev:ino.
   // Partial downloads are counted, not sized.
   let apparentBytes = Object.values(repo.blobs).reduce((n, b) => n + (b.dangling ? 0 : b.size), 0);
+  for (const size of gitBlobs(repo).values()) apparentBytes += size;
   const inodes = new Set<string>();
   for (const f of repo.files) {
     if (f.blobEtag !== null || !f.facts.isFile || f.facts.isSymlink) continue;

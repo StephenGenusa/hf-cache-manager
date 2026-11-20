@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+- **Export to drive:** copy models from the library to a USB drive. The app shows the connected drives, checks that
+  the selection fits, and writes only inside a folder named `hf-cache-manager-transfer`. It never deletes or replaces
+  a file on the drive. Large files are stored in parts of 1 GB, so the drive can use FAT32, exFAT, NTFS or ext4.
+- **Load from USB:** in Download mode, list the models on a connected drive and load them into the cache. Each file is
+  checked against its Hugging Face hash before it enters the cache. Nothing in the cache or in the saved settings
+  points to the drive. Loading never goes online, so it works with `HF_HUB_OFFLINE=1`.
+- **Configuration:** `HFCM_TRANSFER_ROOTS` names the folders to use as drives when a drive is mounted in an unusual
+  place.
+- **Fix: Windows caches with the shared blob store.** The store marker and `.refs` files that `huggingface_hub` writes
+  with CRLF line endings on Windows are now read correctly. A file that is not LFS, linked to a blob named by its
+  40-hex git id, now counts that blob's size instead of 0.
+
 ## 1.0.1 — 2026-11-10
 
 - **Diffusion and ComfyUI repos:** a new kind, "Diffusion / ComfyUI", for repos whose model card or configs say they

@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, expectTypeOf, test } from 'vitest';
 import { DELETION_ID_RE } from '../../src/core/hold/manifest';
 import { API_METHODS, CHANNELS, DOWNLOAD_DONE_EVENT, DOWNLOAD_PROGRESS_EVENT, SCAN_PROGRESS_EVENT } from '../../src/shared/api';
 import type {
-  ApiErrorCode, ApiResult, DiskInfoDTO, DownloadGroupDTO, DownloadPreviewDTO, DownloadsDTO, HubLookupDTO, RecentLookupDTO, MachineProfileDTO, RepoAdviceDTO, EmptyPlanDTO, ExecResultDTO, HeldListDTO, HfcmApi, InvokeMethod, LibraryDTO,
+  ApiErrorCode, ApiResult, DiskInfoDTO, DownloadGroupDTO, ExportDTO, ExportPreviewDTO, TransferDriveDTO, TransferVolumeDTO, DownloadPreviewDTO, DownloadsDTO, HubLookupDTO, RecentLookupDTO, MachineProfileDTO, RepoAdviceDTO, EmptyPlanDTO, ExecResultDTO, HeldListDTO, HfcmApi, InvokeMethod, LibraryDTO,
   PlanDTO, PlanPairDTO, RepoDetailDTO, SelectionPreviewDTO, SettingsDTO, StartupNoticeDTO, SyncPlanDTO, SyncResultDTO,
 } from '../../src/shared/api';
 import { DEFAULT_ADVICE } from '../../src/main/app-settings';
@@ -130,12 +130,13 @@ test('failures carry a message and no args', () => {
 
 test('every invoke method has a schema and a channel', () => {
   expect(Object.keys(ARG_SCHEMAS).sort()).toEqual([...API_METHODS].sort());
-  expect(API_METHODS).toHaveLength(30);
-  expect(new Set(API_METHODS).size).toBe(30);
+  expect(API_METHODS).toHaveLength(37);
+  expect(new Set(API_METHODS).size).toBe(37);
   expect(API_METHODS.slice(16, 20)).toEqual(['advice', 'machineProfile', 'setAdviceSettings', 'redetectMachine']);
-  expect(API_METHODS.slice(-10)).toEqual([
+  expect(API_METHODS.slice(20, 30)).toEqual([
     'hubLookup', 'downloadAdvice', 'downloadPreview', 'downloadStart', 'downloadPause', 'downloadResume', 'downloadCancel', 'downloads', 'recentLookups',
     'lookupGroups']);
+  expect(API_METHODS.slice(-7)).toEqual(['transferVolumes', 'transferDrive', 'transferOpen', 'exportPreview', 'exportStart', 'exportCancel', 'exports']);
   for (const m of API_METHODS) expect(CHANNELS[m]).toBe(`hfcm:${m}`);
   expect(SCAN_PROGRESS_EVENT).toBe('hfcm:scan-progress');
   expect(DOWNLOAD_PROGRESS_EVENT).toBe('hfcm:download-progress');
@@ -144,6 +145,30 @@ test('every invoke method has a schema and a channel', () => {
   // The events are subscriptions, never invoke channels
   expect(API_METHODS as readonly string[]).not.toContain('onDownloadProgress');
   expect(API_METHODS as readonly string[]).not.toContain('onDownloadDone');
+  expect(API_METHODS as readonly string[]).not.toContain('onExportProgress');
+});
+
+test('transfer calls take a volume id and a repo key, never a path', () => {
+  const V = '0123456789abcdef';
+  const KEY = `model:org/Model-GGUF@${'c'.repeat(40)}`;
+  const SEL = { repos: [{ repoId: 'org/Model-GGUF', whole: true }] };
+  expect(parseArgs('transferVolumes', []).ok).toBe(true);
+  expect(parseArgs('exports', []).ok).toBe(true);
+  expect(parseArgs('transferDrive', [V])).toEqual({ ok: true, args: [V] });
+  expect(parseArgs('transferOpen', [V, KEY])).toEqual({ ok: true, args: [V, KEY] });
+  expect(parseArgs('transferOpen', [V, `dataset:gpt2@${'c'.repeat(40)}`]).ok).toBe(true);
+  expect(parseArgs('exportPreview', [SEL, V])).toEqual({ ok: true, args: [SEL, V] });
+  expect(parseArgs('exportStart', ['11111111-1111-4111-8111-111111111111']).ok).toBe(true);
+  expect(parseArgs('exportCancel', ['11111111-1111-4111-8111-111111111111']).ok).toBe(true);
+  for (const bad of ['E:/', 'E:\\', '/media/sam/USB', '', '0123456789ABCDEF', '0123456789abcde', '../0123456789abcdef']) {
+    expect(parseArgs('transferDrive', [bad]).ok, bad).toBe(false);
+    expect(parseArgs('exportPreview', [SEL, bad]).ok, bad).toBe(false);
+  }
+  for (const bad of ['org/Model-GGUF', `model:../x@${'c'.repeat(40)}`, `model:a/b/c@${'c'.repeat(40)}`, 'model:org/name@main', `kernel:org/name@${'c'.repeat(40)}`]) {
+    expect(parseArgs('transferOpen', [V, bad]).ok, bad).toBe(false);
+  }
+  expect(parseArgs('transferDrive', [V, 'extra']).ok).toBe(false);
+  expect(parseArgs('exportStart', ['not-a-uuid']).ok).toBe(false);
 });
 
 test('rejects a repoId repeated within one selection', () => {
@@ -200,11 +225,19 @@ describe('type contract', () => {
     expectTypeOf<ReturnType<HfcmApi['lookupGroups']>>().toEqualTypeOf<Promise<ApiResult<DownloadGroupDTO[]>>>();
     expectTypeOf<ReturnType<HfcmApi['onDownloadProgress']>>().toEqualTypeOf<() => void>();
     expectTypeOf<ReturnType<HfcmApi['onDownloadDone']>>().toEqualTypeOf<() => void>();
+    expectTypeOf<ReturnType<HfcmApi['transferVolumes']>>().toEqualTypeOf<Promise<ApiResult<TransferVolumeDTO[]>>>();
+    expectTypeOf<ReturnType<HfcmApi['transferDrive']>>().toEqualTypeOf<Promise<ApiResult<TransferDriveDTO>>>();
+    expectTypeOf<ReturnType<HfcmApi['transferOpen']>>().toEqualTypeOf<Promise<ApiResult<HubLookupDTO>>>();
+    expectTypeOf<ReturnType<HfcmApi['exportPreview']>>().toEqualTypeOf<Promise<ApiResult<ExportPreviewDTO>>>();
+    expectTypeOf<ReturnType<HfcmApi['exportStart']>>().toEqualTypeOf<Promise<ApiResult<{ id: string }>>>();
+    expectTypeOf<ReturnType<HfcmApi['exportCancel']>>().toEqualTypeOf<Promise<ApiResult<null>>>();
+    expectTypeOf<ReturnType<HfcmApi['exports']>>().toEqualTypeOf<Promise<ApiResult<ExportDTO[]>>>();
+    expectTypeOf<ReturnType<HfcmApi['onExportProgress']>>().toEqualTypeOf<() => void>();
     expectTypeOf<'OFFLINE'>().toExtend<ApiErrorCode>();
     expectTypeOf<(typeof API_METHODS)[number]>().toEqualTypeOf<InvokeMethod>();
     expectTypeOf<'CONFIG'>().toExtend<ApiErrorCode>();
     expectTypeOf<SettingsDTO['platform']>().toExtend<string>();
-    expect(API_METHODS).toHaveLength(30); // the assertions above are compile-time; typecheck is the gate
+    expect(API_METHODS).toHaveLength(37); // the assertions above are compile-time; typecheck is the gate
   });
 });
 

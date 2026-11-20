@@ -25,6 +25,7 @@ import type {
   ApiError, ApiErrorCode, ApiResult, AutoEmptyPendingNoticeDTO, MachineProfileDTO, RepoAdviceDTO, AutoEmptySkippedNoticeDTO, DiskInfoDTO, EmptyPlanDTO, EmptyTarget, ExecResultDTO, HeldListDTO, LibraryDTO, PlanDTO,
   PlanPairDTO, RepoDetailDTO, ScanProgressDTO, SelectionPreviewDTO, SettingsDTO, SettingsViewDTO, JournalNoticeDTO, StartupNoticeDTO,
   SyncPlanDTO, SyncResultDTO, DownloadDoneDTO, DownloadGroupDTO, DownloadPreviewDTO, DownloadProgressDTO, DownloadsDTO, HubLookupDTO, RecentLookupDTO,
+  ExportDTO, ExportPreviewDTO, TransferDriveDTO, TransferVolumeDTO,
 } from '../shared/api';
 import { formatBytes } from '../shared/format';
 import { profileDto, repoAdvice, undetectedMachine, type ShapeCache } from './advice-service';
@@ -36,6 +37,7 @@ import {
 import { DownloadService, repoLabel, type DownloadOptions } from './download-service';
 import { parseRepoFolder } from '../core/scan/scanner';
 import type { ScanRunner } from './scan-client';
+import { EXPORT_ACTIVE_TEXT, TransferService } from './transfer-service';
 
 export interface ServicesDeps {
   env: NodeJS.ProcessEnv;
@@ -65,6 +67,12 @@ export interface ServicesDeps {
   /** Download progress events and the per-download "done" event (after its rescan), to the window. */
   emitDownloadProgress?: (e: DownloadProgressDTO) => void;
   emitDownloadDone?: (e: DownloadDoneDTO) => void;
+  /** Export progress events, to the window. */
+  emitExportProgress?: (e: ExportDTO) => void;
+  /** The login name, for the folders Linux mounts drives under (default: none, so only /media and /mnt are searched). */
+  user?: string;
+  /** Transfer test seams: the part size of new objects on a drive and the volume probe's time limit. */
+  transfer?: { partSize?: number; probeTimeoutMs?: number };
   /** Test seams (fetch, statfs, sleeps). Production passes none: the hub client then uses `hubFetch`. */
   download?: DownloadOptions;
   /** The disk meter's statfs; absent: the real one. Set only by a guarded E2E run (bootstrap e2eDisk). */
@@ -243,6 +251,8 @@ export class AppServices {
   private readonly shapes: ShapeCache = new Map();
   /** Look-ups, previews and the download engine. Downloads run outside `op` (they are background work). */
   private readonly dl: DownloadService;
+  /** Transfer drives: the volume list, loads (through `dl`) and exports. Exports run outside `op`, like downloads. */
+  private readonly transfer: TransferService;
 
   constructor(private readonly d: ServicesDeps) {
     this.fs = d.fs ?? readFs;
@@ -263,6 +273,13 @@ export class AppServices {
       emitProgress: (e) => this.d.emitDownloadProgress?.(e),
       emitDone: (e) => this.d.emitDownloadDone?.(e),
     }, d.download);
+    this.transfer = new TransferService({
+      env: d.env, platform: d.platform, user: d.user ?? '', now: d.now, fs: this.fs, dl: this.dl,
+      model: () => this.scannedModel(),
+      emitExport: (e) => this.d.emitExportProgress?.(e),
+      ...(d.download?.statfs === undefined ? {} : { statfs: d.download.statfs }),
+      ...(d.transfer ?? {}),
+    });
   }
 
   private async safe<T>(fn: () => Promise<ApiResult<T>>): Promise<ApiResult<T>> {
@@ -1193,11 +1210,16 @@ export class AppServices {
   private async downloadBlock(plan: DeletionPlan): Promise<{ ok: false; error: ApiError } | null> {
     if (plan.purpose === 'empty') return null;
     const { active, unreadable } = await this.dl.activeFolders(plan.hubRoot);
+    const exporting = this.transfer.activeFolders();
     const touched = new Set<string>();
     for (const op of plan.ops) {
       const paths = [opPath(op), 'dest' in op ? op.dest : null];
       for (const p of paths) {
         if (p === null) continue;
+        // A repo being copied to a drive stays as it is until the export ends.
+        for (const [folder, label] of exporting) {
+          if (p === folder || isStrictlyInside(p, folder)) return fail('ACTIVE_DOWNLOAD', EXPORT_ACTIVE_TEXT(label));
+        }
         for (const [folder, label] of active) {
           if (p === folder || isStrictlyInside(p, folder)) return fail('ACTIVE_DOWNLOAD', DOWNLOAD_ACTIVE_TEXT(label));
         }
@@ -1282,6 +1304,41 @@ export class AppServices {
 
   recentLookups(): Promise<ApiResult<RecentLookupDTO[]>> {
     return this.safe(() => this.dl.recentLookups());
+  }
+
+  // ------------------------------------------------------------------ transfer drives
+
+  transferVolumes(): Promise<ApiResult<TransferVolumeDTO[]>> {
+    return this.safe(() => this.transfer.transferVolumes());
+  }
+
+  transferDrive(volumeId: string): Promise<ApiResult<TransferDriveDTO>> {
+    return this.safe(() => this.transfer.transferDrive(volumeId));
+  }
+
+  transferOpen(volumeId: string, repoKey: string): Promise<ApiResult<HubLookupDTO>> {
+    return this.safe(() => this.transfer.transferOpen(volumeId, repoKey));
+  }
+
+  exportPreview(selection: Selection, volumeId: string): Promise<ApiResult<ExportPreviewDTO>> {
+    return this.safe(() => this.transfer.exportPreview(selection, volumeId));
+  }
+
+  exportStart(previewId: string): Promise<ApiResult<{ id: string }>> {
+    return this.safe(() => this.transfer.exportStart(previewId));
+  }
+
+  exportCancel(id: string): Promise<ApiResult<null>> {
+    return this.safe(() => this.transfer.exportCancel(id));
+  }
+
+  exports(): Promise<ApiResult<ExportDTO[]>> {
+    return this.safe(() => this.transfer.exports());
+  }
+
+  /** Resolves when no export is running (tests). */
+  exportsIdle(): Promise<void> {
+    return this.transfer.whenIdle();
   }
 
   /** Off for the session, with a notice. */

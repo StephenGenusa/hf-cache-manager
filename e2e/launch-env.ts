@@ -6,7 +6,7 @@
 // ELECTRON_*, any future location variable) is left out. HOME and the XDG base dirs are then set inside the run dir, so
 // Chromium, GTK and fontconfig write only there, and without a session bus Chromium cannot reach the real keyring
 // (`launchOptions` also passes --password-store=basic).
-import { basename, isAbsolute, join, relative, resolve } from 'node:path';
+import { basename, delimiter, isAbsolute, join, relative, resolve } from 'node:path';
 
 export interface LaunchPaths {
   /** The per-run `mkdtemp(<tmpdir>/hfcm-e2e-)` dir (realpath). */
@@ -23,8 +23,10 @@ const ALLOWED = /^(PATH|DISPLAY|XAUTHORITY|WAYLAND_DISPLAY|LANG|LC_[A-Z_]+|TZ|TE
  * The only variables a test may add: an outside hub (the refusal test), the guarded grace override, the guarded machine
  * profile (main honours it only after guardTestEnv passed) and HF_ENDPOINT, which must be the loopback
  * fake Hub: main also refuses any other endpoint under E2E, so a test can never reach the real Hub.
+ * HFCM_TRANSFER_ROOTS names the folders that stand for transfer drives: each must lie inside the run dir (main applies
+ * the same rule under E2E and never searches for real drives), so an export or a load can never touch a real volume.
  */
-const ALLOWED_EXTRA = new Set(['HF_HUB_CACHE', 'HFCM_E2E_AUTO_EMPTY_GRACE_MS', 'HFCM_E2E_MACHINE', 'HFCM_E2E_DISK', 'HF_ENDPOINT']);
+const ALLOWED_EXTRA = new Set(['HF_HUB_CACHE', 'HFCM_E2E_AUTO_EMPTY_GRACE_MS', 'HFCM_E2E_MACHINE', 'HFCM_E2E_DISK', 'HF_ENDPOINT', 'HFCM_TRANSFER_ROOTS']);
 const LOOPBACK_ENDPOINT = /^http:\/\/(?:127\.0\.0\.1|localhost|\[::1\])(?::\d{1,5})?(?:\/[^?#@]*)?$/;
 export const RUN_DIR_PREFIX = 'hfcm-e2e-';
 
@@ -59,6 +61,9 @@ export function buildLaunchEnv(parent: NodeJS.ProcessEnv, p: LaunchPaths, opts: 
   for (const k of Object.keys(extra)) if (!ALLOWED_EXTRA.has(k)) throw new Error(`${k} is not an allowed extra variable`);
   if (extra['HF_ENDPOINT'] !== undefined && !LOOPBACK_ENDPOINT.test(extra['HF_ENDPOINT'])) {
     throw new Error(`HF_ENDPOINT must be a loopback http origin (the fake Hub): '${extra['HF_ENDPOINT']}'`);
+  }
+  for (const root of (extra['HFCM_TRANSFER_ROOTS'] ?? '').split(delimiter).filter((x) => x !== '')) {
+    if (!isAbsolute(root) || !strictlyInside(root, p.root)) throw new Error(`HFCM_TRANSFER_ROOTS names a folder outside the run dir: ${root}`);
   }
   if (mode === 'first-run' && Object.keys(extra).length > 0) throw new Error('the first-run launch takes no extra variables');
   const out: Record<string, string> = {};

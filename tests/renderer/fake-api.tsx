@@ -171,6 +171,15 @@ export function makeFakeApi(over: Partial<HfcmApi> = {}): HfcmApi {
     onScanProgress: () => () => undefined,
     onDownloadProgress: () => () => undefined,
     onDownloadDone: () => () => undefined,
+    // Transfer drives: no volume connected unless a test supplies some
+    transferVolumes: () => Promise.resolve(ok([])),
+    transferDrive: () => Promise.resolve({ ok: false, error: { code: 'NOT_FOUND', message: 'That drive is no longer connected. Choose a drive again.' } }),
+    transferOpen: () => Promise.resolve(ok({ ...HUB_LOOKUP, advice: hubAdvice(HUB_LOOKUP, false) })),
+    exportPreview: () => Promise.resolve({ ok: false, error: { code: 'NOT_FOUND', message: 'That drive is no longer connected. Choose a drive again.' } }),
+    exportStart: () => Promise.resolve(ok({ id: 'ex1' })),
+    exportCancel: () => Promise.resolve(ok(null)),
+    exports: () => Promise.resolve(ok([])),
+    onExportProgress: () => () => undefined,
     ...over,
   };
   return api;

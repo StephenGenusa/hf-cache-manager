@@ -7,21 +7,24 @@ export const STORE_MARKER = '.huggingface-shared-blobs';
 
 const HASH = /^[0-9a-f]{64}$/;
 
-/** The marker counts only as a regular file (not a link) whose bytes are exactly "1\n". Any doubt is false. */
+/** The marker counts only as a regular file (not a link) whose bytes are exactly "1" and one line ending. Any doubt is false. */
 export async function readStoreMarker(hubRoot: string, fs: ReadFs = readFs): Promise<boolean> {
   const p = join(hubRoot, 'blobs', STORE_MARKER);
   try {
     const st = await fs.lstat(p);
     if (!st.isFile()) return false;
-    return (await fs.readFile(p)).equals(Buffer.from('1\n'));
+    // "1" and one line ending: LF, or CRLF as huggingface_hub writes it on Windows (a text-mode write)
+    const bytes = await fs.readFile(p);
+    return bytes.equals(Buffer.from('1\n')) || bytes.equals(Buffer.from('1\r\n'));
   } catch {
     return false;
   }
 }
 
-/** Split on "\n", dropping only the final empty element. No trimming. */
+/** Split into lines, dropping only the final empty element. No trimming. */
 export function parseRefs(raw: string): string[] {
-  const lines = raw.split('\n');
+  // LF or CRLF (the line ending a text-mode write gives on Windows). A lone "\r" stays in its line, which then fails validation.
+  const lines = raw.split(/\r?\n/);
   if (lines[lines.length - 1] === '') lines.pop();
   return lines;
 }

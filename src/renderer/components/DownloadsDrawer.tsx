@@ -1,10 +1,11 @@
 import { X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import type { DlState, DownloadItemDTO } from '../../shared/api';
+import type { DlState, DownloadItemDTO, ExportDTO } from '../../shared/api';
 import { formatBytes } from '../lib/format';
 import { unwrap, useApi } from '../lib/api';
 import { useAdvice } from '../lib/queries';
 import { shownFiles, useDownloads, type ShownFile } from '../state/downloads';
+import { useExports } from '../state/exports';
 import { NameParts } from './NameParts';
 import { Button } from './ui/button';
 import { toast } from './ui/toast';
@@ -62,7 +63,10 @@ function ItemBlock({ item }: { item: DownloadItemDTO }) {
   return (
     <section data-testid="download-item" aria-label={item.repoId} className="border-b border-border px-4 py-3">
       <div className="flex items-center gap-2">
-        <span className="min-w-0 flex-1 truncate text-[13px] font-semibold">{item.repoId}</span>
+        <span className="min-w-0 flex-1 truncate text-[13px] font-semibold">
+          {item.repoId}
+          {item.fromDrive === true && <span data-testid="download-from-drive" className="ml-1.5 text-[11px] font-normal text-muted-foreground">from drive</span>}
+        </span>
         {running && <Button size="sm" onClick={() => void run(() => api.downloadPause(item.id))}>Pause</Button>}
         {resumable && <Button size="sm" onClick={() => void run(() => api.downloadResume(item.id))}>{failed && !running ? 'Retry' : 'Resume'}</Button>}
         {unfinished.length === 0
@@ -84,10 +88,37 @@ function ItemBlock({ item }: { item: DownloadItemDTO }) {
   );
 }
 
+const EXPORT_TEXT: Record<ExportDTO['status'], string> = { running: 'Copying', done: 'Done', failed: 'Failed', cancelled: 'Cancelled' };
+
+/** One export to a drive: overall progress, the file in hand, and Cancel while it runs. */
+function ExportBlock({ e }: { e: ExportDTO }) {
+  const api = useApi();
+  const cancel = async (): Promise<void> => {
+    try { unwrap(await api.exportCancel(e.id)); } catch (err) { toast({ title: err instanceof Error ? err.message : String(err), tone: 'danger' }); }
+  };
+  const names = e.repoIds.length <= 2 ? e.repoIds.join(', ') : `${e.repoIds[0]} and ${e.repoIds.length - 1} more`;
+  return (
+    <section data-testid="export-item" data-status={e.status} aria-label={`Export to ${e.volumeName}`} className="border-b border-border px-4 py-3">
+      <div className="flex items-center gap-2">
+        <span className="min-w-0 flex-1 truncate text-[13px] font-semibold">{`Export to ${e.volumeName}`}</span>
+        {e.status === 'running' && <Button size="sm" variant="ghost" onClick={() => void cancel()}>Cancel</Button>}
+      </div>
+      <div className="truncate text-xs text-muted-foreground">{names}</div>
+      <div className="text-xs text-muted-foreground">
+        {`${formatBytes(e.bytes)} / ${formatBytes(e.totalBytes)} · ${e.filesDone} of ${e.filesTotal} ${e.filesTotal === 1 ? 'file' : 'files'} · `}
+        <span data-testid="export-state" className={e.status === 'failed' ? 'text-danger' : undefined}>{EXPORT_TEXT[e.status]}</span>
+      </div>
+      {e.status === 'running' && e.current !== null && <div className="break-all font-mono text-xs">{e.current}</div>}
+      {e.message !== null && <div data-testid="export-message" className={`break-words text-xs ${e.status === 'failed' ? 'text-danger' : 'text-muted-foreground'}`}>{e.message}</div>}
+    </section>
+  );
+}
+
 /** The right-side Downloads panel: every queued file with its progress and the controls main allows (per download). */
 export function DownloadsDrawer({ onClose }: { onClose(): void }) {
   const items = useDownloads((s) => s.items);
   const disabledReason = useDownloads((s) => s.disabledReason);
+  const exportItems = useExports((s) => s.items);
   // Escape closes it; focus goes back to what had it when the drawer opened (the Downloads button)
   const close = useRef(onClose);
   close.current = onClose;
@@ -110,6 +141,7 @@ export function DownloadsDrawer({ onClose }: { onClose(): void }) {
       </header>
       {disabledReason !== null && <p className="px-4 py-2 text-xs text-warning">{disabledReason}</p>}
       <div className="min-h-0 flex-1 overflow-y-auto">
+        {exportItems.map((e) => <ExportBlock key={e.id} e={e} />)}
         {items.length === 0 ? <p className="px-4 py-3 text-xs text-muted-foreground">No downloads.</p> : items.map((i) => <ItemBlock key={i.id} item={i} />)}
       </div>
     </aside>

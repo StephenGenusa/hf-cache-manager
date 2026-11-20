@@ -66,6 +66,16 @@ test('extra vars: only HF_HUB_CACHE and the E2E grace override are accepted, any
   expect(() => buildLaunchEnv(POLLUTED, PATHS, { mode: 'first-run', extra: { HF_HUB_CACHE: '/x' } })).toThrow(/first-run/);
 });
 
+test('extra vars: transfer drive folders pass only when every one is inside the run dir, never from the parent env', () => {
+  const usb = `${ROOT}/usb`;
+  expect(buildLaunchEnv(POLLUTED, PATHS, { extra: { HFCM_TRANSFER_ROOTS: usb } })['HFCM_TRANSFER_ROOTS']).toBe(usb);
+  expect(buildLaunchEnv({ ...POLLUTED, HFCM_TRANSFER_ROOTS: usb }, PATHS)['HFCM_TRANSFER_ROOTS']).toBeUndefined();
+  for (const bad of ['/media/user/USB', `${usb}:/media/user/USB`, ROOT, `${ROOT}/../elsewhere`, 'usb']) {
+    expect(() => buildLaunchEnv(POLLUTED, PATHS, { extra: { HFCM_TRANSFER_ROOTS: bad } }), bad).toThrow(/outside the run dir/);
+  }
+  expect(() => buildLaunchEnv(POLLUTED, PATHS, { mode: 'first-run', extra: { HFCM_TRANSFER_ROOTS: usb } })).toThrow(/first-run/);
+});
+
 test('HF_ENDPOINT passes only as an explicit extra, and only as a loopback http origin', () => {
   expect(buildLaunchEnv({ ...POLLUTED, HF_ENDPOINT: 'http://127.0.0.1:9' }, PATHS)['HF_ENDPOINT']).toBeUndefined();   // never from the parent env
   expect(buildLaunchEnv(POLLUTED, PATHS, { extra: { HF_ENDPOINT: 'http://127.0.0.1:41234' } })['HF_ENDPOINT']).toBe('http://127.0.0.1:41234');

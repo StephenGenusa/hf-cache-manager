@@ -14,6 +14,8 @@ import { classifyRepo } from '../core/classify/classify';
 import type { HfhubConfig } from '../core/compat/config';
 import { fileStates, requiresBytes, unchangedLinks, type FileState } from '../core/download/cache-state';
 import { remoteRepo, repoFolderName, toRemoteListing, type RemoteListing } from '../core/download/remote-repo';
+import type { DriveRepo } from '../core/transfer/drive-reader';
+import { toRawListing } from '../core/transfer/format';
 import { shapeFromHeaders, type ModelShape } from '../core/advice/shape';
 import { factsOf, isNotFound, type ReadFs } from '../core/fsx';
 import { hashCanonical } from '../core/plan/fingerprint';
@@ -35,6 +37,7 @@ import { badgeFor } from './dto';
 import { isE2E } from './env-guard';
 import { createHubClient, HubClientError, hubFetch, type HubClient } from './hub/client';
 import { endpointFromEnv, type HubEndpoint } from './hub/policy';
+import { DRIVE_GONE_TEXT, type DriveSource } from './transfer/drive-source';
 
 /** Look-ups and previews live this long (like deletion plans). */
 export const DOWNLOAD_TTL_MS = 10 * 60_000;
@@ -104,10 +107,12 @@ interface Lookup {
   shapes: ShapeCache;
   /** Gated and no token at look-up time: no header is requested. */
   noToken: boolean;
+  /** Set for a repo opened from a transfer drive: its bytes come from here, and the Hub is never asked. */
+  local: DriveSource | null;
 }
 interface Preview {
   hubRoot: string; listing: RemoteListing; revision: string; paths: string[]; fingerprint: string; fits: boolean; reason: string | null;
-  expiresAt: number; used: boolean;
+  expiresAt: number; used: boolean; local: DriveSource | null;
 }
 
 const fail = (code: ApiErrorCode, message: string): { ok: false; error: ApiError } => ({ ok: false, error: { code, message } });
@@ -325,6 +330,14 @@ export class DownloadService {
   private async engineFor(): Promise<ApiResult<DownloadEngine>> {
     const c = await this.hubClient(false);
     if (!c.ok) return c;
+    return this.engineAny();
+  }
+
+  /**
+   * The engine whether or not the Hub can be used: a load from a transfer drive needs no network, so it works with
+   * download mode off (HF_HUB_OFFLINE). A Hub item resumed through such an engine fails with the Hub client's reason.
+   */
+  private async engineAny(): Promise<ApiResult<DownloadEngine>> {
     const hub = await this.h.port.resolveHub();
     if (!hub.present) return fail('HUB_MISSING', hub.problem.message);
     if (this.engine === null || this.engine.hubRoot !== hub.hubRoot) {
@@ -418,13 +431,47 @@ export class DownloadService {
     const lookupId = randomUUID();
     this.lookups.set(lookupId, {
       listing, revision, gated: rev.gated, expiresAt: now + DOWNLOAD_TTL_MS, blocked, noToken,
-      groups: new Map(groups.map((g) => [g.key, g])), repo, view, shapes: new Map(),
+      groups: new Map(groups.map((g) => [g.key, g])), repo, view, shapes: new Map(), local: null,
     });
     await this.remember({ repoId, type, revision, at: now });
     return ok({
       lookupId, repoId, type, revision, commit: rev.commit, badge: badgeFor(view), gated: rev.gated, private: rev.private,
       lastModified: rev.lastModified, downloadable: blocked === null, notDownloadableReason: blocked?.message ?? null, groups, advice,
       shapesPending: !noToken && headerJobs(repo, view, new Map()).length > 0,
+    });
+  }
+
+  /**
+   * A repo commit on a transfer drive as a look-up: the same groups, states, advice, preview and start as a Hub
+   * look-up, with the drive as the byte source. No network and no token are used, so it works with download mode off.
+   * The revision is the ref the commit had when it was exported (written here only when this cache has no such ref),
+   * else the commit itself. Not added to the recent look-ups.
+   */
+  async driveLookup(src: DriveSource, drive: DriveRepo): Promise<ApiResult<HubLookupDTO>> {
+    const listing = toRemoteListing(toRawListing(drive));
+    const repo = remoteRepo(listing);
+    const view = classifyRepo(repo, () => null);
+    const m = await this.h.model();
+    const states = m.ok ? fileStates(listing, m.data) : new Map<string, FileState>();
+    const blocked: ApiError | null = m.ok ? null : m.error;
+    const ctx = await this.h.adviceContext();
+    const advice = await repoAdvice({
+      repo, view, machine: ctx.machine, settings: ctx.settings, config: ctx.config, cache: new Map(), readText: () => null,
+      readHeaders: () => Promise.reject(new NotRead('shapes come from downloadAdvice')),
+    });
+    const groups = downloadGroups(listing, view, states);
+    const now = this.h.now();
+    this.prune(now);
+    const lookupId = randomUUID();
+    const revision = drive.ref ?? drive.commit;
+    this.lookups.set(lookupId, {
+      listing, revision, gated: false, expiresAt: now + DOWNLOAD_TTL_MS, blocked, noToken: false,
+      groups: new Map(groups.map((g) => [g.key, g])), repo, view, shapes: new Map(), local: src,
+    });
+    return ok({
+      lookupId, repoId: drive.repoId, type: drive.type, revision, commit: drive.commit, badge: badgeFor(view), gated: false, private: false,
+      lastModified: null, downloadable: blocked === null, notDownloadableReason: blocked?.message ?? null, groups, advice,
+      shapesPending: headerJobs(repo, view, new Map()).length > 0,
     });
   }
 
@@ -440,6 +487,7 @@ export class DownloadService {
     const byEtag = new Map(listing.files.map((f) => [f.etag, f]));
     const readHeaders = async (paths: readonly string[]): Promise<GgufHeader[] | null> => {
       if (l.noToken) throw new NotRead('not read: the repo is gated and no token is set');
+      if (l.local !== null) return this.driveHeaders(l.local, paths.map((p) => byEtag.get(p.slice(p.lastIndexOf('/') + 1))?.path));
       const c = await this.hubClient(false);
       if (!c.ok) throw new NotRead(c.error.message);
       const out: GgufHeader[] = [];
@@ -474,6 +522,33 @@ export class DownloadService {
       repo, view, machine: ctx.machine, settings: ctx.settings, config: ctx.config, cache: shapes, readText: () => null,
       readHeaders: () => Promise.reject(new NotRead('read above')),
     }));
+  }
+
+  /**
+   * GGUF headers read from a transfer drive. A header that cannot be parsed is a fact of the bytes (null, cached); a
+   * drive that cannot be read is not (NotRead: the shape stays unknown for now and is read again next time).
+   */
+  private async driveHeaders(src: DriveSource, paths: ReadonlyArray<string | undefined>): Promise<GgufHeader[] | null> {
+    const out: GgufHeader[] = [];
+    for (const path of paths) {
+      if (path === undefined) return null;
+      let failed = false;
+      try {
+        const readAt = src.readAt(path);
+        out.push(await readGgufHeader(async (offset, length) => {
+          try {
+            return await readAt(offset, length);
+          } catch (e) {
+            failed = true;
+            throw e;
+          }
+        }, GGUF_ARRAY_ITEMS));
+      } catch {
+        if (failed) throw new NotRead('the drive could not be read');
+        return null;
+      }
+    }
+    return out;
   }
 
   /** The look-up's groups with their cache states read again from the current scan (after a download); no Hub request. */
@@ -544,6 +619,7 @@ export class DownloadService {
     }
     this.previews.set(previewId, {
       hubRoot: m.data.hubRoot, listing, revision: l.revision, paths: chosen, fingerprint, fits, reason, expiresAt: now + DOWNLOAD_TTL_MS, used: false,
+      local: l.local,
     });
     return ok({ previewId, fingerprint, requiresBytes: need, freeBytes: room.free, fits, reason, files: fetch.length });
   }
@@ -597,23 +673,29 @@ export class DownloadService {
       p.used = false;
       return r;
     };
-    const e = await this.engineFor();
+    const e = p.local === null ? await this.engineFor() : await this.engineAny();
     if (!e.ok) return retryable(e);
     // The hub the preview was fingerprinted on must be the one the engine writes to
     if (this.engine?.hubRoot !== p.hubRoot) return fail('STALE', CHANGED_TEXT);
-    const c = await this.hubClient(true);
-    if (!c.ok) return retryable(c);
     const { listing } = p;
-    try {
-      const rev = await c.data.client.revision(listing.repoId, listing.type, p.revision);
-      if (rev.commit !== listing.commit) return fail('STALE', MOVED_TEXT);
-    } catch (err) {
-      return retryable(hubFailure(err));
+    if (p.local !== null) {
+      // The drive must still hold every chosen file as it was listed
+      if ((await p.local.current(p.paths)) === null) return fail('STALE', DRIVE_GONE_TEXT);
+    } else {
+      const c = await this.hubClient(true);
+      if (!c.ok) return retryable(c);
+      try {
+        const rev = await c.data.client.revision(listing.repoId, listing.type, p.revision);
+        if (rev.commit !== listing.commit) return fail('STALE', MOVED_TEXT);
+      } catch (err) {
+        return retryable(hubFailure(err));
+      }
     }
     if (await previewFingerprint(this.h.fs, p.hubRoot, listing, p.revision, p.paths, this.writing()) !== p.fingerprint) {
       return fail('STALE', CHANGED_TEXT);
     }
-    const refAtStart = await refCommit(this.h.fs, p.hubRoot, listing, p.revision);
+    // A load from a drive never moves a ref that is there: with null the engine writes the ref only when it is absent.
+    const refAtStart = p.local === null ? await refCommit(this.h.fs, p.hubRoot, listing, p.revision) : null;
     const m = await this.h.model();
     if (!m.ok) return retryable(m);
     // from here to the engine's start nothing awaits: no execute or sync can begin in between
@@ -633,7 +715,7 @@ export class DownloadService {
       links: unchangedLinks(listing, m.data).filter((x) => !fetched.has(x.path)),
     };
     this.live.add(item.id);
-    await e.data.start(item);
+    await e.data.start(item, p.local === null ? undefined : { open: p.local.open });
     return ok({ id: item.id });
   }
 
@@ -683,7 +765,7 @@ export class DownloadService {
   }
 
   private async control(id: string, fn: (e: DownloadEngine) => Promise<void> | void): Promise<ApiResult<null>> {
-    const e = await this.engineFor();
+    const e = this.engineNow?.isLocal(id) === true ? await this.engineAny() : await this.engineFor();
     if (!e.ok) return e;
     if (!e.data.list().some((i) => i.id === id)) return fail('NOT_FOUND', 'That download is no longer in the queue.');
     await fn(e.data);
@@ -714,7 +796,7 @@ export class DownloadService {
    * is removed from the queue saved in settings, so a paused or failed item never blocks a deletion for good.
    */
   async downloadCancel(id: string): Promise<ApiResult<null>> {
-    const e = await this.engineFor();
+    const e = this.engineNow?.isLocal(id) === true ? await this.engineAny() : await this.engineFor();
     if (!e.ok) return this.cancelSaved(id);
     if (!e.data.list().some((i) => i.id === id)) return fail('NOT_FOUND', 'That download is no longer in the queue.');
     this.live.delete(id);
@@ -743,17 +825,20 @@ export class DownloadService {
   async downloads(): Promise<ApiResult<DownloadsDTO>> {
     const e = await this.engineFor();
     if (!e.ok) {
+      // An engine built for a load from a drive while download mode is off holds the saved queue (restored) and the loads.
+      const built = this.restored;
+      if (built !== null) return ok({ items: built.list().map((i) => itemDto(i, built.isLocal(i.id))), disabledReason: e.error.message, notes: [] });
       const saved = (await this.h.settings.loadChecked()).settings.downloads?.items ?? [];
-      return ok({ items: saved.map(itemDto), disabledReason: e.error.message, notes: [] });
+      return ok({ items: saved.map((i) => itemDto(i, false)), disabledReason: e.error.message, notes: [] });
     }
     const notes = [e.data.saveError, e.data.lockError].filter((n): n is string => n !== null);
-    return ok({ items: e.data.list().map(itemDto), disabledReason: null, notes });
+    return ok({ items: e.data.list().map((i) => itemDto(i, e.data.isLocal(i.id))), disabledReason: null, notes });
   }
 }
 
-function itemDto(i: QueueItem): DownloadItemDTO {
+function itemDto(i: QueueItem, fromDrive: boolean): DownloadItemDTO {
   return {
-    id: i.id, repoId: i.repoId, type: i.type, revision: i.revision, commit: i.commit,
+    id: i.id, repoId: i.repoId, type: i.type, revision: i.revision, commit: i.commit, ...(fromDrive ? { fromDrive: true as const } : {}),
     files: i.files.map((f) => ({ path: f.path, size: f.size, state: f.state, bytes: f.bytes, error: f.error })),
   };
 }

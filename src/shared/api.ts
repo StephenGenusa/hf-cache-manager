@@ -219,6 +219,8 @@ export interface DownloadProgressDTO { id: string; path: string; state: DlState;
 export interface DownloadDoneDTO { id: string; repoId: string; type: HubRepoType }
 export interface DownloadItemDTO {
   id: string; repoId: string; type: HubRepoType; revision: string; commit: string;
+  /** Set (true) on an item loaded from a transfer drive, not the Hub. Such an item is not kept across a restart. */
+  fromDrive?: true;
   files: Array<{ path: string; size: number; state: DlState; bytes: number; error: string | null }>;
 }
 /**
@@ -229,6 +231,36 @@ export interface DownloadItemDTO {
 export interface DownloadsDTO { items: DownloadItemDTO[]; disabledReason: string | null; notes: string[] }
 /** A recent look-up (newest first, at most 20). `input` looks it up again as typed into the field. */
 export interface RecentLookupDTO { input: string; repoId: string; type: HubRepoType; revision: string; at: number }
+
+// ---------------------------------------------------------------- transfer drives (Export to drive, Load from USB)
+
+/** A mounted volume. `id` stands for its root, which never leaves main. `hasTransfer`: it holds a transfer folder. */
+export interface TransferVolumeDTO { id: string; name: string; totalBytes: number; freeBytes: number; hasTransfer: boolean }
+/** One repo commit on a drive. `files` counts the files that can be loaded; `incompleteFiles` those whose data is not all there. */
+export interface TransferRepoDTO {
+  key: string; repoId: string; type: RepoType; commitShort: string; ref: string | null; exportedAtMs: number;
+  bytes: number; files: number; incompleteFiles: number;
+}
+export interface TransferDriveDTO { volume: TransferVolumeDTO; repos: TransferRepoDTO[]; notes: string[] }
+/**
+ * What an export of the selection to the volume would write. `requiresBytes` counts each file once and nothing that
+ * is on the drive already. `fits` false comes with the `reason`. `skipped` names the files that cannot be exported.
+ */
+export interface ExportPreviewDTO {
+  previewId: string; volumeName: string; repos: number; files: number; requiresBytes: number; freeBytes: number;
+  fits: boolean; reason: string | null; skipped: string[];
+}
+export const EXPORT_STATUSES = ['running', 'done', 'failed', 'cancelled'] as const;
+export type ExportStatus = (typeof EXPORT_STATUSES)[number];
+/**
+ * An export, as listed and as sent in progress events (at most 4 per second, plus one on every change of status).
+ * `bytes` of `totalBytes` are on the drive (what was there before the export counts from the start). `current` is the
+ * file being hashed or copied. `message`: why it failed or stopped, or what was left out.
+ */
+export interface ExportDTO {
+  id: string; volumeName: string; repoIds: string[]; status: ExportStatus; message: string | null;
+  bytes: number; totalBytes: number; filesDone: number; filesTotal: number; current: string | null;
+}
 
 export interface HfcmApi {
   scan(): Promise<ApiResult<LibraryDTO>>;
@@ -270,21 +302,37 @@ export interface HfcmApi {
   recentLookups(): Promise<ApiResult<RecentLookupDTO[]>>;
   /** The look-up's groups with their cache states read again from the current scan (after a download); no Hub request. */
   lookupGroups(lookupId: string): Promise<ApiResult<DownloadGroupDTO[]>>;
+  /** The mounted volumes a transfer can use (the system drive is left out). Probed each time; nothing is remembered. */
+  transferVolumes(): Promise<ApiResult<TransferVolumeDTO[]>>;
+  /** What the volume's transfer folder holds. NOT_FOUND when the volume is gone or has no transfer folder. */
+  transferDrive(volumeId: string): Promise<ApiResult<TransferDriveDTO>>;
+  /** Opens a repo of the drive as a look-up: downloadAdvice, downloadPreview and downloadStart then load it into the cache. */
+  transferOpen(volumeId: string, repoKey: string): Promise<ApiResult<HubLookupDTO>>;
+  /** What exporting the selection to the volume would write, and whether it fits; nothing is written. */
+  exportPreview(selection: Selection, volumeId: string): Promise<ApiResult<ExportPreviewDTO>>;
+  /** Starts a previewed export (single use). BUSY while another export runs. */
+  exportStart(previewId: string): Promise<ApiResult<{ id: string }>>;
+  /** Stops a running export; what it wrote stays on the drive. */
+  exportCancel(id: string): Promise<ApiResult<null>>;
+  /** This session's exports, newest first. */
+  exports(): Promise<ApiResult<ExportDTO[]>>;
   onScanProgress(cb: (p: ScanProgressDTO) => void): () => void;
   onDownloadProgress(cb: (p: DownloadProgressDTO) => void): () => void;
   onDownloadDone(cb: (p: DownloadDoneDTO) => void): () => void;
+  onExportProgress(cb: (p: ExportDTO) => void): () => void;
 }
 /** The events: subscriptions, not invoke channels. */
-export type EventMethod = 'onScanProgress' | 'onDownloadProgress' | 'onDownloadDone';
+export type EventMethod = 'onScanProgress' | 'onDownloadProgress' | 'onDownloadDone' | 'onExportProgress';
 export type InvokeMethod = Exclude<keyof HfcmApi, EventMethod>;
 
-/** The 30 invoke methods, in declaration order (a literal checked against `InvokeMethod`, never a bare declaration). */
+/** The 37 invoke methods, in declaration order (a literal checked against `InvokeMethod`, never a bare declaration). */
 export const API_METHODS = [
   'scan', 'cancelScan', 'repoDetail', 'previewSelection', 'planDelete', 'executePlan', 'listHeld', 'planRestore',
   'planEmpty', 'setAutoEmptyDays', 'planSync', 'executeSync', 'settings', 'diskInfo', 'startupNotices',
   'ackStartupNotice', 'advice', 'machineProfile', 'setAdviceSettings', 'redetectMachine',
   'hubLookup', 'downloadAdvice', 'downloadPreview', 'downloadStart', 'downloadPause', 'downloadResume', 'downloadCancel', 'downloads', 'recentLookups',
   'lookupGroups',
+  'transferVolumes', 'transferDrive', 'transferOpen', 'exportPreview', 'exportStart', 'exportCancel', 'exports',
 ] as const satisfies readonly InvokeMethod[];
 
 export const CHANNELS: Record<InvokeMethod, `hfcm:${InvokeMethod}`> =
@@ -292,5 +340,6 @@ export const CHANNELS: Record<InvokeMethod, `hfcm:${InvokeMethod}`> =
 export const SCAN_PROGRESS_EVENT = 'hfcm:scan-progress';
 export const DOWNLOAD_PROGRESS_EVENT = 'hfcm:download-progress';
 export const DOWNLOAD_DONE_EVENT = 'hfcm:download-done';
+export const EXPORT_PROGRESS_EVENT = 'hfcm:export-progress';
 
 declare global { interface Window { api: HfcmApi } }

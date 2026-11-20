@@ -1,10 +1,19 @@
 // Electron entry: wires the real `app`, `ipcMain`, `dialog` and window into `bootstrap` (src/main/bootstrap.ts).
 import { app, dialog, ipcMain } from 'electron';
-import { homedir } from 'node:os';
+import { homedir, userInfo } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { bootFailed, bootstrap, createProductionServices } from './bootstrap';
 import { createMainWindow, hardenElectronWebContents } from './window';
+
+/** The login name, for the folders Linux mounts removable drives under; '' when the system does not give one. */
+function loginName(): string {
+  try {
+    return userInfo().username;
+  } catch {
+    return '';
+  }
+}
 
 const here = dirname(fileURLToPath(import.meta.url));
 const rendererFile = join(here, '../renderer/index.html');
@@ -37,7 +46,7 @@ void bootstrap({
   home: homedir(),
   platform: process.platform,
   harden: hardenElectronWebContents,
-  buildServices: (ctx) => createProductionServices({ ...ctx, env: process.env, home: homedir(), platform: process.platform }),
+  buildServices: (ctx) => createProductionServices({ ...ctx, env: process.env, home: homedir(), platform: process.platform, user: loginName() }),
   createWindow: () => createMainWindow({
     preloadPath: join(here, '../preload/index.cjs'), rendererUrl, isPackaged: app.isPackaged, rendererFile,
   }),

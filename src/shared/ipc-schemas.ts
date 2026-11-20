@@ -1,6 +1,7 @@
 // Strict argument schemas for every invoke channel. The renderer never sends a filesystem path:
 // only repo ids, group keys, plan ids, fingerprints, deletion ids, modes, booleans, a confirm string, a day count,
-// the advice settings block (numbers, enums and tool names) and, for download mode, the look-up text and uuids.
+// the advice settings block (numbers, enums and tool names), for download mode the look-up text and uuids, and for
+// transfer drives a volume id and a repo key (a drive's path stays in main).
 import { z } from 'zod';
 import type { AdviceSettings } from '../core/advice/profile';
 import type { Tool } from './knowledge/rules';
@@ -69,6 +70,13 @@ export const MAX_DOWNLOAD_GROUP_KEYS = 500;
 export const DOWNLOAD_GROUP_KEYS = z.array(GROUP_KEY).min(1).max(MAX_DOWNLOAD_GROUP_KEYS)
   .refine((k) => new Set(k).size === k.length, 'groupKey repeated');
 
+/** A volume's id (the first 16 hex of the SHA-256 of its root, made in main): never a path. */
+export const VOLUME_ID = z.string().regex(/^[0-9a-f]{16}$/);
+/** `<type>:<repo id>@<40-hex commit>`: one repo commit on a transfer drive. */
+export const TRANSFER_REPO_KEY = z.string().max(300)
+  .regex(/^(model|dataset|space):[A-Za-z0-9][A-Za-z0-9._-]*(\/[A-Za-z0-9][A-Za-z0-9._-]*)?@[0-9a-f]{40}$/);
+export const EXPORT_ID = z.string().uuid();
+
 export const ARG_SCHEMAS = {
   scan: NONE,
   cancelScan: NONE,
@@ -102,6 +110,13 @@ export const ARG_SCHEMAS = {
   downloads: NONE,
   recentLookups: NONE,
   lookupGroups: z.tuple([LOOKUP_ID]),
+  transferVolumes: NONE,
+  transferDrive: z.tuple([VOLUME_ID]),
+  transferOpen: z.tuple([VOLUME_ID, TRANSFER_REPO_KEY]),
+  exportPreview: z.tuple([SELECTION, VOLUME_ID]),
+  exportStart: z.tuple([PREVIEW_ID]),
+  exportCancel: z.tuple([EXPORT_ID]),
+  exports: NONE,
 } as const satisfies Record<InvokeMethod, z.ZodType>;
 
 export function parseArgs<M extends InvokeMethod>(

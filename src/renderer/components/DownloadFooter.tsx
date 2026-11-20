@@ -33,9 +33,12 @@ export interface DownloadFooterProps {
   /** A look-up is in flight: the ticks belong to the old one. */
   lookingUp: boolean;
   onLookupAgain(): void;
+  /** Where the look-up's files come from: the wording says Load for a transfer drive. Default the Hub. */
+  source?: 'hub' | 'drive';
 }
 
-export function DownloadFooter({ lookup, gatedNote, advicePending, lookingUp, onLookupAgain }: DownloadFooterProps) {
+export function DownloadFooter({ lookup, gatedNote, advicePending, lookingUp, onLookupAgain, source = 'hub' }: DownloadFooterProps) {
+  const verb = source === 'drive' ? 'Load' : 'Download';
   const api = useApi();
   const keys = useDownloadSelection((s) => s.keys);
   const clear = useDownloadSelection((s) => s.clear);
@@ -98,7 +101,7 @@ export function DownloadFooter({ lookup, gatedNote, advicePending, lookingUp, on
         if (STALE_CODES.has(s.error.code)) setStale(s.error.message); else setError(s.error.message);
         return;
       }
-      toast({ title: `Download started: ${lookup.repoId}`, tone: 'success' });
+      toast({ title: `${verb} started: ${lookup.repoId}`, tone: 'success' });
       clear();
     } catch (e) {
       setError(errText(e));
@@ -116,13 +119,13 @@ export function DownloadFooter({ lookup, gatedNote, advicePending, lookingUp, on
       {stale !== null && (
         <span role="alert" data-testid="stale-note" className="flex items-center gap-2 text-warning">
           {stale}
-          <Button onClick={onLookupAgain}>Look up again</Button>
+          <Button onClick={onLookupAgain}>{source === 'drive' ? 'Read the drive again' : 'Look up again'}</Button>
         </span>
       )}
       <span className="ml-auto flex items-center gap-2">
         {reason !== null && <span data-testid="download-reason" className="text-xs text-muted-foreground">{reason}</span>}
         <Button data-testid="download-button" variant="primary" size="md" disabled={reason !== null || busy || stale !== null} onClick={() => void start()}>
-          {requires > 0 ? `Download ${formatBytes(requires)}` : 'Download'}
+          {requires > 0 ? `${verb} ${formatBytes(requires)}` : verb}
         </Button>
       </span>
     </footer>

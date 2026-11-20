@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
-import type { DownloadGroupDTO, GroupAdviceDTO, HubLookupDTO, RepoAdviceDTO } from '../../shared/api';
+import type { ApiResult, DownloadGroupDTO, GroupAdviceDTO, HubLookupDTO, RepoAdviceDTO } from '../../shared/api';
 import { useApi } from '../lib/api';
 import { formatBytes } from '../lib/format';
 import { queryKeys, useRecentLookups } from '../lib/queries';
@@ -11,6 +11,7 @@ import { AdviceBasis } from './AdviceBasis';
 import { AdviceCell } from './AdviceCell';
 import { DownloadFooter } from './DownloadFooter';
 import { HubInput } from './HubInput';
+import { LoadFromDrive } from './LoadFromDrive';
 import { NameParts } from './NameParts';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
@@ -69,7 +70,11 @@ export function DownloadMode() {
   const [gatedNote, setGatedNote] = useState<string | null>(null);
   const [adviceNote, setAdviceNote] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(new Set());
-  const lastInput = useRef('');
+  // Where the shown look-up came from, and how to make it again (the same Hub text, or the same repo of the drive)
+  const [source, setSource] = useState<'hub' | 'drive'>('hub');
+  const [driveOpen, setDriveOpen] = useState(false);
+  const [driveKey, setDriveKey] = useState<string | null>(null);
+  const again = useRef<() => void>(() => undefined);
   const token = useRef(0);
 
   useEffect(() => () => { token.current += 1; }, []);
@@ -88,16 +93,17 @@ export function DownloadMode() {
     });
   }, [api, shownId, shownRepo, shownType]);
 
-  const doLookup = async (text: string): Promise<void> => {
+  /** One look-up, from the Hub or from a transfer drive: the rest (groups, advice, preview, start) is the same. */
+  const runLookup = async (from: 'hub' | 'drive', ask: () => Promise<ApiResult<HubLookupDTO>>): Promise<void> => {
     const mine = ++token.current;
-    lastInput.current = text;
+    again.current = () => void runLookup(from, ask);
     setBusy(true);
     setLookupError(null);
     clearKeys();
     try {
-      const r = await api.hubLookup(text);
+      const r = await ask();
       if (mine !== token.current) return;
-      void client.invalidateQueries({ queryKey: queryKeys.recentLookups });
+      if (from === 'hub') void client.invalidateQueries({ queryKey: queryKeys.recentLookups });
       if (!r.ok) {
         setLookup(null); setAdvice(null); setPending(false); setGatedNote(null); setAdviceNote(null);
         setLookupError(r.error.message);
@@ -105,6 +111,7 @@ export function DownloadMode() {
       }
       const l = r.data;
       setLookup(l);
+      setSource(from);
       setAdvice(l.advice);
       setPending(l.shapesPending);
       setGatedNote(null);
@@ -126,6 +133,11 @@ export function DownloadMode() {
     }
   };
 
+  const doLookup = (text: string): Promise<void> => {
+    setDriveKey(null);
+    return runLookup('hub', () => api.hubLookup(text));
+  };
+
   const adviceOf = (key: string): GroupAdviceDTO | undefined => advice?.groups.find((a) => a.key === key);
   const items = useDownloads((s) => s.items);
   const live = useDownloads((s) => s.live);
@@ -143,6 +155,9 @@ export function DownloadMode() {
       <div className="flex min-h-0 flex-1">
         <aside data-testid="left-pane" className="flex w-[270px] shrink-0 flex-col border-r border-border">
           <HubInput value={input} onChange={setInput} onLookup={(t) => void doLookup(t)} />
+          <Button data-testid="btn-load-usb" className="mx-2.5 mb-1.5 self-start" variant={driveOpen ? 'tonal' : 'default'} aria-pressed={driveOpen} onClick={() => setDriveOpen((v) => !v)}>
+            Load from USB…
+          </Button>
           <div className="min-h-0 flex-1 overflow-y-auto">
             {lookup !== null && (
               <div data-testid="lookup-repo" className="border-b border-border/60 bg-accent px-3 py-2">
@@ -151,15 +166,23 @@ export function DownloadMode() {
                   <Badge tone="gguf">{lookup.badge}</Badge>
                   {lookup.gated && <Badge tone="warning">gated</Badge>}
                   {lookup.private && <Badge tone="warning">private</Badge>}
+                  {source === 'drive' && <Badge data-testid="lookup-from-drive">from drive</Badge>}
                 </div>
                 {lookup.lastModified !== null && (
                   <div data-testid="lookup-date" className="mt-0.5 text-[11px] text-muted-foreground">Updated {lookup.lastModified.slice(0, 10)}</div>
                 )}
               </div>
             )}
-            <h3 className="px-3 pt-3 pb-1 text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">Recent look-ups</h3>
-            {recent.length === 0 && <p className="px-3 text-xs text-muted-foreground">Nothing looked up yet.</p>}
-            {recent.map((r) => (
+            {driveOpen && (
+              <LoadFromDrive
+                activeKey={source === 'drive' && lookup !== null ? driveKey : null}
+                onBack={() => setDriveOpen(false)}
+                onOpen={(volumeId, r) => { setDriveKey(r.key); void runLookup('drive', () => api.transferOpen(volumeId, r.key)); }}
+              />
+            )}
+            {!driveOpen && <h3 className="px-3 pt-3 pb-1 text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">Recent look-ups</h3>}
+            {!driveOpen && recent.length === 0 && <p className="px-3 text-xs text-muted-foreground">Nothing looked up yet.</p>}
+            {!driveOpen && recent.map((r) => (
               <button
                 key={`${r.at}:${r.input}`} type="button" data-testid="recent-lookup"
                 onClick={() => { setInput(r.input); void doLookup(r.input); }}
@@ -173,7 +196,7 @@ export function DownloadMode() {
         <main data-testid="right-pane" className="min-w-0 flex-1 overflow-auto px-4 py-3.5">
           {lookupError !== null && <p role="alert" data-testid="lookup-error" className="text-sm text-danger">{lookupError}</p>}
           {lookup === null && lookupError === null && (
-            <div data-testid="detail-slot" className="text-muted-foreground">Look up a Hugging Face repo to see what you can download.</div>
+            <div data-testid="detail-slot" className="text-muted-foreground">Look up a Hugging Face repo to see what you can download, or load models from a USB drive.</div>
           )}
           {lookup !== null && (
             <TooltipProvider>
@@ -273,7 +296,7 @@ export function DownloadMode() {
           )}
         </main>
       </div>
-      <DownloadFooter lookup={lookup} gatedNote={gatedNote} advicePending={pending} lookingUp={busy} onLookupAgain={() => void doLookup(lastInput.current)} />
+      <DownloadFooter lookup={lookup} gatedNote={gatedNote} advicePending={pending} lookingUp={busy} onLookupAgain={() => again.current()} source={source} />
     </>
   );
 }

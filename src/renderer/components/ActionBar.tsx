@@ -13,11 +13,11 @@ import { Button } from './ui/button';
 
 export const PREVIEW_DEBOUNCE_MS = 150;
 
-export interface ActionBarProps { onReview(sel: Selection): void; onEmptyHeld(): void }
+export interface ActionBarProps { onReview(sel: Selection): void; onEmptyHeld(): void; /** Export the selection to a drive; absent: no button. */ onExport?(sel: Selection): void }
 
 type Preview = { kind: 'idle' } | { kind: 'pending' } | { kind: 'ok'; data: SelectionPreviewDTO } | { kind: 'error'; message: string };
 
-export function ActionBar({ onReview, onEmptyHeld }: ActionBarProps) {
+export function ActionBar({ onReview, onEmptyHeld, onExport }: ActionBarProps) {
   const api = useApi();
   const client = useQueryClient();
   const library = useLibrary();
@@ -126,6 +126,10 @@ export function ActionBar({ onReview, onEmptyHeld }: ActionBarProps) {
       {sel !== null && (
         <>
           <Button onClick={() => useSelection.getState().clear()}>Clear</Button>
+          {onExport !== undefined && (
+            // The same gate as the review: the selection is known to main and the cache can be read
+            <Button data-testid="btn-export" disabled={!canReview} onClick={() => { if (canReview) onExport(sel); }}>Export to drive…</Button>
+          )}
           <Button data-testid="btn-review" variant="destructive" size="md" disabled={!canReview} onClick={() => reviewRef.current()}>
             Review deletion…
           </Button>

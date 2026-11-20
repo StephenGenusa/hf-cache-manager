@@ -26,7 +26,7 @@ async function exposed(): Promise<HfcmApi> {
 
 test('exposes exactly the api methods and forwards to channels', async () => {
   const api = await exposed();
-  expect(Object.keys(api).sort()).toEqual([...API_METHODS, 'onScanProgress', 'onDownloadProgress', 'onDownloadDone'].sort());
+  expect(Object.keys(api).sort()).toEqual([...API_METHODS, 'onScanProgress', 'onDownloadProgress', 'onDownloadDone', 'onExportProgress'].sort());
   expect(Object.values(api).every((v) => typeof v === 'function')).toBe(true);
   vi.mocked(ipcRenderer.invoke).mockResolvedValue({ ok: true, data: null });
   await api.executePlan('id', 'fp', 'hold', null);
@@ -125,4 +125,27 @@ test('the preload bundle requires nothing but electron (sandbox-safe)', async ()
   expect(new Set(required)).toEqual(new Set(['electron']));
   expect(code).not.toMatch(/\bimport\s*\(/);
   expect(code).not.toContain('exposeInMainWorld("api", electron.ipcRenderer');
+});
+
+test('exposes the transfer methods on their channels', async () => {
+  const api = await exposed();
+  vi.mocked(ipcRenderer.invoke).mockResolvedValue({ ok: true, data: null });
+  const volume = '0123456789abcdef';
+  const key = `model:org/name@${'c'.repeat(40)}`;
+  const selection = { repos: [{ repoId: 'org/name', whole: true as const }] };
+  const id = '00000000-0000-4000-8000-000000000002';
+  await api.transferVolumes();
+  expect(ipcRenderer.invoke).toHaveBeenLastCalledWith('hfcm:transferVolumes');
+  await api.transferDrive(volume);
+  expect(ipcRenderer.invoke).toHaveBeenLastCalledWith('hfcm:transferDrive', volume);
+  await api.transferOpen(volume, key);
+  expect(ipcRenderer.invoke).toHaveBeenLastCalledWith('hfcm:transferOpen', volume, key);
+  await api.exportPreview(selection, volume);
+  expect(ipcRenderer.invoke).toHaveBeenLastCalledWith('hfcm:exportPreview', selection, volume);
+  await api.exportStart(id);
+  expect(ipcRenderer.invoke).toHaveBeenLastCalledWith('hfcm:exportStart', id);
+  await api.exportCancel(id);
+  expect(ipcRenderer.invoke).toHaveBeenLastCalledWith('hfcm:exportCancel', id);
+  await api.exports();
+  expect(ipcRenderer.invoke).toHaveBeenLastCalledWith('hfcm:exports');
 });

@@ -15,8 +15,8 @@ import { configPath } from '../core/compat/config';
 import { readFs } from '../core/fsx';
 import type { ReadFs } from '../core/fsx';
 import { resolveHfHome, resolveHubRoot } from '../core/paths';
-import { DOWNLOAD_DONE_EVENT, DOWNLOAD_PROGRESS_EVENT, SCAN_PROGRESS_EVENT } from '../shared/api';
-import type { DownloadDoneDTO, DownloadProgressDTO, ScanProgressDTO } from '../shared/api';
+import { DOWNLOAD_DONE_EVENT, DOWNLOAD_PROGRESS_EVENT, EXPORT_PROGRESS_EVENT, SCAN_PROGRESS_EVENT } from '../shared/api';
+import type { DownloadDoneDTO, DownloadProgressDTO, ExportDTO, ScanProgressDTO } from '../shared/api';
 import { undetectedMachine } from './advice-service';
 import { createCorePort } from './core-port';
 import { guardTestEnv, isE2E, preflightTestEnv } from './env-guard';
@@ -82,6 +82,7 @@ export interface ServiceEvents {
   emitProgress: (p: ScanProgressDTO) => void;
   emitDownloadProgress: (e: DownloadProgressDTO) => void;
   emitDownloadDone: (e: DownloadDoneDTO) => void;
+  emitExportProgress: (e: ExportDTO) => void;
 }
 
 const errText = (e: unknown): string => (e instanceof Error ? e.message : String(e));
@@ -189,8 +190,11 @@ export function e2eDisk(env: NodeJS.ProcessEnv): StatfsLike | undefined {
   }
 }
 
-type ProductionCtx = { userDataDir: string; env: NodeJS.ProcessEnv; home: string; platform: NodeJS.Platform; emitProgress: (p: ScanProgressDTO) => void }
-  & Partial<Omit<ServiceEvents, 'emitProgress'>>;
+type ProductionCtx = {
+  userDataDir: string; env: NodeJS.ProcessEnv; home: string; platform: NodeJS.Platform; emitProgress: (p: ScanProgressDTO) => void;
+  /** The login name (os.userInfo), for the folders Linux mounts drives under. */
+  user?: string;
+} & Partial<Omit<ServiceEvents, 'emitProgress'>>;
 
 /** The production services deps: the real port (no test-only options, ever), the worker scan runner and the real clock. */
 export function productionServicesDeps(ctx: ProductionCtx): ServicesDeps {
@@ -211,6 +215,8 @@ export function productionServicesDeps(ctx: ProductionCtx): ServicesDeps {
     emitProgress: ctx.emitProgress, platform, detectMachine: detect, ...(grace === undefined ? {} : { autoEmptyGraceMs: grace }),
     ...(ctx.emitDownloadProgress ? { emitDownloadProgress: ctx.emitDownloadProgress } : {}),
     ...(ctx.emitDownloadDone ? { emitDownloadDone: ctx.emitDownloadDone } : {}),
+    ...(ctx.emitExportProgress ? { emitExportProgress: ctx.emitExportProgress } : {}),
+    ...(ctx.user === undefined ? {} : { user: ctx.user }),
   };
 }
 
@@ -278,6 +284,7 @@ export async function bootstrap(d: BootDeps): Promise<BootResult> {
       emitProgress: (p) => { live()?.webContents.send(SCAN_PROGRESS_EVENT, p); },
       emitDownloadProgress: (e) => { live()?.webContents.send(DOWNLOAD_PROGRESS_EVENT, e); },
       emitDownloadDone: (e) => { live()?.webContents.send(DOWNLOAD_DONE_EVENT, e); },
+      emitExportProgress: (e) => { live()?.webContents.send(EXPORT_PROGRESS_EVENT, e); },
     });
     const trust = (url: string): boolean => isTrustedSender(url, { rendererFile: d.rendererFile, devOrigin: devOriginOf(d.rendererUrl, app.isPackaged) });
     registerIpc(adaptIpcMain(d.ipcMain, (s) => live()?.webContents === s), svc, trust);

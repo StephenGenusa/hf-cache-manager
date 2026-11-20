@@ -14,6 +14,7 @@ import { StartupNotice } from './components/StartupNotice';
 import { SyncDialog } from './components/SyncDialog';
 import { DownloadsDrawer } from './components/DownloadsDrawer';
 import { DownloadMode } from './components/DownloadMode';
+import { ExportDialog } from './components/ExportDialog';
 import { TopBar, type AppMode } from './components/TopBar';
 import { useDownloadSelection } from './state/download-selection';
 import { toast } from './components/ui/toast';
@@ -22,6 +23,7 @@ import { execErrorText } from './lib/exec-copy';
 import { formatBytes } from './lib/format';
 import { queryKeys, useLibrary } from './lib/queries';
 import { useDownloadsFeed } from './lib/use-downloads-feed';
+import { useExportsFeed } from './lib/use-exports-feed';
 import { useShortcuts } from './lib/use-shortcuts';
 import { useSelection } from './state/selection';
 import { useSessionLog } from './state/session-log';
@@ -48,6 +50,7 @@ export function App() {
   const [pane, setPane] = useState<'repo' | 'held' | 'settings'>('repo');
   const [syncOpen, setSyncOpen] = useState(false);
   const [downloadsOpen, setDownloadsOpen] = useState(false);
+  const [exporting, setExporting] = useState<Selection | null>(null);
   const [mode, setMode] = useState<AppMode>('library');
   const library = useLibrary();
   const lastAutoEmptyAt = useRef<number | null>(null);
@@ -72,6 +75,14 @@ export function App() {
         </div>
       ),
     });
+  });
+
+  useExportsFeed((e) => {
+    const text = e.status === 'done' ? `Exported to ${e.volumeName}: ${e.repoIds.join(', ')}`
+      : e.status === 'cancelled' ? `Export to ${e.volumeName} cancelled`
+        : `Export to ${e.volumeName} failed${e.message === null ? '' : `: ${e.message}`}`;
+    useSessionLog.getState().add(text, e.status === 'done' ? 'success' : e.status === 'failed' ? 'danger' : 'default');
+    toast({ title: text, tone: e.status === 'done' ? 'success' : e.status === 'failed' ? 'danger' : 'default' });
   });
 
   const planFailed = (e: ApiError): null => {
@@ -162,7 +173,10 @@ export function App() {
       )}
       {downloadsOpen && <DownloadsDrawer onClose={() => setDownloadsOpen(false)} />}
       <SyncDialog open={syncOpen} onClose={() => setSyncOpen(false)} />
-      {mode === 'library' && <ActionBar onReview={(sel) => void open(deleteSource(sel))} onEmptyHeld={() => void open(emptySource({ all: true }))} />}
+      <ExportDialog selection={exporting} onClose={() => setExporting(null)} onStarted={() => setDownloadsOpen(true)} />
+      {mode === 'library' && (
+        <ActionBar onReview={(sel) => void open(deleteSource(sel))} onEmptyHeld={() => void open(emptySource({ all: true }))} onExport={setExporting} />
+      )}
       {review !== null && (
         <ReviewDialog
           key={reviewKey(review.source)}

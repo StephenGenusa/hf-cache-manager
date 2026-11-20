@@ -52,6 +52,7 @@ export const MSG = {
   refUnknown: (revision: string): string =>
     `refs/${revision} was not changed: this download was queued by an older version that did not record the ref`,
   refMoved: (revision: string): string => `refs/${revision} was moved by another download meanwhile; not changed`,
+  refKept: (revision: string): string => `refs/${revision} already names another revision in this cache; it was not changed`,
 } as const;
 
 export interface DownloadEngineDeps {
@@ -69,6 +70,13 @@ export interface DownloadEngineDeps {
   /** Waits `ms`, rejecting with the signal's reason when it aborts. Tests shorten it. */
   sleep?: (ms: number, signal: AbortSignal) => Promise<void>;
 }
+
+/**
+ * Where a local item's bytes come from instead of the Hub (a transfer drive). It is held in memory only: an item started
+ * with one is never saved to settings, so nothing on disk names the drive, and it is gone after a restart (its partial
+ * files stay in the cache and a new load continues them).
+ */
+export interface LocalSource { open: HubClient['open'] }
 
 /** A file stops with this state and reason (no exception escapes a file's run). */
 class Stop extends Error {
@@ -148,6 +156,8 @@ interface Run { ctl: AbortController; done: Promise<void> }
 
 export class DownloadEngine {
   private readonly items = new Map<string, QueueItem>();
+  /** The byte source of each local item (see LocalSource); every other item reads from the Hub client. */
+  private readonly local = new Map<string, LocalSource>();
   private readonly runs = new Map<string, Run>();
   private readonly streams = new Slots(MAX_STREAMS);
   /** Commit steps run one at a time inside the app as well (one AppLock instance cannot be taken twice). */
@@ -171,8 +181,11 @@ export class DownloadEngine {
     this.sleep = d.sleep ?? defaultSleep;
   }
 
-  /** Queues `item` (validated; its repo folder name must be safe) and starts its unfinished files. */
-  async start(item: QueueItem): Promise<void> {
+  /**
+   * Queues `item` (validated; its repo folder name must be safe) and starts its unfinished files. With `local`, the
+   * bytes come from it and the item is never saved.
+   */
+  async start(item: QueueItem, local?: LocalSource): Promise<void> {
     const parsed = QUEUE_ITEM.safeParse(item);
     if (!parsed.success) throw new Error(`Invalid download: ${parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; ')}`);
     repoFolderName(parsed.data.repoId, parsed.data.type);   // throws on an unsafe repo id
@@ -180,6 +193,7 @@ export class DownloadEngine {
     if (parsed.data.files.some((f) => f.state === 'done')) throw new Error('A new download cannot list files as done');
     const own = structuredClone(parsed.data);
     this.items.set(own.id, own);
+    if (local !== undefined) this.local.set(own.id, local);
     for (const f of own.files) {
       f.state = 'queued';
       f.error = null;
@@ -215,11 +229,17 @@ export class DownloadEngine {
     if (!this.items.has(id)) return;
     this.pause(id);
     this.items.delete(id);
+    this.local.delete(id);
     this.persist();
   }
 
   list(): QueueItem[] {
     return structuredClone([...this.items.values()]);
+  }
+
+  /** The item reads from a local source (a transfer drive), not the Hub. */
+  isLocal(id: string): boolean {
+    return this.local.has(id);
   }
 
   /**
@@ -391,8 +411,11 @@ export class DownloadEngine {
     const attempt = new AbortController();
     const sig = AbortSignal.any([signal, attempt.signal]);
     try {
-      const res = await this.d.client.open(item.repoId, item.type, item.commit, f.path, from, sig);
-      if (res.size !== null && res.size !== f.size) throw new Stop('failed', `the Hub reports ${res.size} bytes for this file, the listing ${f.size}`);
+      const local = this.local.get(item.id);
+      const res = await (local ?? this.d.client).open(item.repoId, item.type, item.commit, f.path, from, sig);
+      if (res.size !== null && res.size !== f.size) {
+        throw new Stop('failed', `${local ? 'the drive holds' : 'the Hub reports'} ${res.size} bytes for this file, the listing ${f.size}`);
+      }
       const w = await dfs.openIncomplete(f.etag, cur);
       let failure: unknown = null;
       try {
@@ -571,7 +594,8 @@ export class DownloadEngine {
       // DownloadFs names any temp file the attempt left (never deleted), so the user can remove it.
       throw new Stop('failed', `could not update refs/${item.revision}: ${message(e)}`);
     }
-    return moved === 'moved' ? MSG.refMoved(item.revision) : null;
+    if (moved !== 'moved') return null;
+    return this.local.has(item.id) ? MSG.refKept(item.revision) : MSG.refMoved(item.revision);
   }
 
   /**
@@ -726,7 +750,7 @@ export class DownloadEngine {
     try {
       while (this.dirty) {
         this.dirty = false;
-        const items = this.list();
+        const items = this.list().filter((i) => !this.local.has(i.id));
         try {
           let skipped: string | null = null;
           await this.d.settings.update((cur) => {

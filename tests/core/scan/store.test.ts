@@ -23,15 +23,19 @@ afterAll(() => {
 });
 
 describe('readStoreMarker', () => {
-  it('is true only for a regular file containing exactly "1\\n"', async () => {
+  it('is true only for a regular file containing exactly "1" and one line ending (LF, or CRLF as written on Windows)', async () => {
     const hb = await build();
     expect(await readStoreMarker(hb.hub)).toBe(false);
     await hb.marker('1');
     expect(await readStoreMarker(hb.hub)).toBe(false);
     await hb.marker('1\n\n');
     expect(await readStoreMarker(hb.hub)).toBe(false);
-    await hb.marker('1\r\n');
+    await hb.marker('1\r');
     expect(await readStoreMarker(hb.hub)).toBe(false);
+    await hb.marker('1\r\n\r\n');
+    expect(await readStoreMarker(hb.hub)).toBe(false);
+    await hb.marker('1\r\n');
+    expect(await readStoreMarker(hb.hub)).toBe(true);
     await hb.marker('1\n');
     expect(await readStoreMarker(hb.hub)).toBe(true);
   });
@@ -45,10 +49,12 @@ describe('readStoreMarker', () => {
 });
 
 describe('parseRefs', () => {
-  it('splits on \\n and drops only the final empty element', () => {
+  it('splits on \\n or \\r\\n and drops only the final empty element', () => {
     expect(parseRefs('models--a--b/blobs/x\nmodels--c--d/blobs/y\n')).toEqual(['models--a--b/blobs/x', 'models--c--d/blobs/y']);
     expect(parseRefs('a\n\nb')).toEqual(['a', '', 'b']);
-    expect(parseRefs('a\r\n')).toEqual(['a\r']);
+    expect(parseRefs('a\r\n')).toEqual(['a']);
+    expect(parseRefs('a\r\nb\r\n')).toEqual(['a', 'b']);
+    expect(parseRefs('a\rb\n')).toEqual(['a\rb']);   // a lone CR is not a line ending: the line then fails validation
     expect(parseRefs('')).toEqual([]);
   });
 });
