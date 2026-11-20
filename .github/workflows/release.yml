@@ -1,0 +1,91 @@
+# Release builds on GitHub's runners, using the same scripts as a local release build (scripts/build/).
+#
+# A pushed v* tag builds all three platforms and, when all three succeed, creates a DRAFT release with the files
+# attached and their SHA-256 sums in the notes; it is published by hand. Running the workflow by hand (Actions tab)
+# builds only, with the files kept as the run's artifacts.
+#
+# Lint, the type check and the unit tests run in the Linux job (build-linux.sh); the macOS and Windows jobs skip them.
+# The builds are unsigned: macOS is ad-hoc signed (build-macos.sh without a Developer ID), Windows has no certificate.
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Checks and AppImage
+        run: scripts/build/build-linux.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux
+          path: dist/*.AppImage
+          if-no-files-found: error
+
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: dmg and zip, x64 and arm64
+        run: scripts/build/build-macos.sh --skip-checks
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos
+          path: |
+            dist/*.dmg
+            dist/*.zip
+          if-no-files-found: error
+
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: NSIS installer
+        shell: pwsh
+        run: ./scripts/build/build-windows.ps1 -SkipChecks
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: dist/*-setup.exe
+          if-no-files-found: error
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [linux, macos, windows]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd dist
+          { echo '### SHA-256'; echo; echo '```'; sha256sum -- *; echo '```'; } > ../notes.md
+          cat ../notes.md
+          gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --draft --verify-tag \
+            --title "HF Cache Manager ${GITHUB_REF_NAME#v}" --notes-file ../notes.md -- *
