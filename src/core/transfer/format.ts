@@ -22,6 +22,11 @@ export const PART_SIZE = 2 ** 30;
 export const MAX_PART_SIZE = 2 ** 32 - 1;
 export const MAX_MANIFEST_BYTES = 64 * 1024 * 1024;
 export const MAX_MANIFEST_FILES = 100_000;
+/**
+ * The most parts one file may have (10 TiB at the 1 GiB part size). The manifest comes from the drive and is untrusted:
+ * without a cap, a tiny part size on a large file would make every per-part loop allocate and stat one entry per byte.
+ */
+export const MAX_PARTS = 10_000;
 const MAX_PATH = 4096;
 
 const ETAG = /^(?:[0-9a-f]{40}|[0-9a-f]{64})$/;
@@ -106,7 +111,9 @@ function parseFile(x: unknown, i: number): TransferFile {
   if (lfs !== (etag.length === 64)) bad(`${f}.lfs`, 'an LFS file has a 64-hex etag, any other a 40-hex one');
   const partSize = nat(o.partSize, `${f}.partSize`);
   if (partSize < 1 || partSize > MAX_PART_SIZE) bad(`${f}.partSize`, 'must be between 1 byte and 4 GiB - 1');
-  return { path, size: nat(o.size, `${f}.size`), etag, lfs, partSize };
+  const size = nat(o.size, `${f}.size`);
+  if (partCount(size, partSize) > MAX_PARTS) bad(`${f}.partSize`, `splits the file into more than ${MAX_PARTS} parts`);
+  return { path, size, etag, lfs, partSize };
 }
 
 function parseValue(v: unknown): TransferManifest {

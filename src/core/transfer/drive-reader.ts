@@ -49,7 +49,8 @@ export async function hasTransfer(volumeRoot: string, fs: ReadFs = readFs): Prom
  */
 export async function partStates(root: string, o: ObjectRef, fs: ReadFs = readFs): Promise<Array<number | null>> {
   const out: Array<number | null> = [];
-  for (let i = 0; i < partSizes(o.size, o.partSize).length; i += 1) {
+  const n = partSizes(o.size, o.partSize).length;
+  for (let i = 0; i < n; i += 1) {
     try {
       const st = await fs.lstat(at(root, partPath(o.etag, i)));
       out.push(st.isFile() && !st.isSymbolicLink() ? st.size : -1);

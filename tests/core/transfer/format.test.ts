@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import { toRemoteListing } from '../../../src/core/download/remote-repo';
 import {
-  MAX_PART_SIZE, PART_SIZE, manifestName, mergeManifests, objectDir, parseManifest, partCount, partPath, partSizes, repoKey, serializeManifest,
+  MAX_PART_SIZE, MAX_PARTS, PART_SIZE, manifestName, mergeManifests, objectDir, parseManifest, partCount, partPath, partSizes, repoKey, serializeManifest,
   toRawListing, type TransferManifest,
 } from '../../../src/core/transfer/format';
 
@@ -103,6 +103,10 @@ describe('manifest text', () => {
     ['a fractional size', (o) => { (o.files as Array<Record<string, unknown>>)[0]!.size = 1.5; }],
     ['a zero part size', (o) => { (o.files as Array<Record<string, unknown>>)[0]!.partSize = 0; }],
     ['a part size over the FAT32 limit', (o) => { (o.files as Array<Record<string, unknown>>)[0]!.partSize = MAX_PART_SIZE + 1; }],
+    ['more parts than MAX_PARTS (a 1-byte part size on a large file)', (o) => {
+      const f = (o.files as Array<Record<string, unknown>>)[0]!;
+      f.size = 2 ** 40; f.partSize = 1;
+    }],
     ['an unknown file field', (o) => { (o.files as Array<Record<string, unknown>>)[0]!.mode = 7; }],
     ['a file that is not an object', (o) => { (o.files as unknown[])[0] = 'x'; }],
     ['the same path twice', (o) => { const f = o.files as Array<Record<string, unknown>>; f[1]!.path = f[0]!.path; }],
@@ -110,6 +114,17 @@ describe('manifest text', () => {
   ])('refuses %s', (_what, change) => {
     const { text, name } = edited(change);
     expect(parseManifest(text, name).ok).toBe(false);
+  });
+  it('accepts exactly MAX_PARTS parts and refuses one more', () => {
+    const at = (parts: number): boolean => {
+      const { text, name } = edited((o) => {
+        const f = (o.files as Array<Record<string, unknown>>)[0]!;
+        f.size = parts; f.partSize = 1;
+      });
+      return parseManifest(text, name).ok;
+    };
+    expect(at(MAX_PARTS)).toBe(true);
+    expect(at(MAX_PARTS + 1)).toBe(false);
   });
   it('accepts a null ref and two paths sharing one object', () => {
     const { text, name } = edited((o) => {
