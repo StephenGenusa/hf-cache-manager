@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.1.0 — 2026-11-19
 
 - **Export to drive:** copy models from the library to a USB drive. The app shows the connected drives, checks that
   the selection fits, and writes only inside a folder named `hf-cache-manager-transfer`. It never deletes or replaces
