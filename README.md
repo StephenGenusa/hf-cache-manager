@@ -86,7 +86,8 @@ Download the file for your system from the [latest release](https://github.com/S
 | --- | --- | --- |
 | Linux (x64) | `hf-cache-manager-<version>.AppImage` | `chmod +x` it and run it. No install needed. AppImages need FUSE 2 (`libfuse2`, or `libfuse2t64` on Ubuntu 24.04 and later). |
 | Windows (x64) | `hf-cache-manager-<version>-setup.exe` | Per-user installer. The build is not code-signed: SmartScreen asks once (*More info*, then *Run anyway*). |
-| macOS (x64) | `hf-cache-manager-<version>-mac-x64.zip` | Unzip and move the app to Applications. It is not notarized: right-click it and choose *Open* the first time, or run `xattr -dr com.apple.quarantine "/Applications/HF Cache Manager.app"`. Runs on Apple Silicon through Rosetta; a native arm64 build can be made with `scripts/build/build-macos.sh`. |
+| macOS (Apple Silicon) | `hf-cache-manager-<version>-mac-arm64.dmg` or `.zip` | Open the dmg (or unzip) and move the app to Applications. It is not notarized: right-click it and choose *Open* the first time, or run `xattr -dr com.apple.quarantine "/Applications/HF Cache Manager.app"`. |
+| macOS (Intel) | `hf-cache-manager-<version>-mac-x64.dmg` or `.zip` | As for Apple Silicon. |
 
 Each release lists the SHA-256 of every file.
 
@@ -243,8 +244,7 @@ own settings folder; nothing leaves the machine.
 ## Known limitations
 
 - **Unsigned builds.** The Windows installer is not code-signed and the macOS app is not notarized, so SmartScreen and
-  Gatekeeper ask once on first launch (see [Install](#install)). The macOS download is an x64 build that runs on Apple
-  Silicon through Rosetta.
+  Gatekeeper ask once on first launch (see [Install](#install)).
 - **On macOS the menu bar shows `hf-cache-manager`** rather than the full product name; this keeps the settings folder
   stable across versions.
 - **Downloads pinned to a commit** (`org/name@<40-hex commit>`) are listed as an older revision once a newer one is
@@ -273,8 +273,10 @@ npm run lint
 npm run typecheck
 ```
 
-Release builds, which install from the lockfile, run lint, the type check and the tests, package, and print each
-artifact's size and SHA-256:
+Releases are built by GitHub Actions (`.github/workflows/release.yml`): pushing a `v*` tag builds Linux, macOS and
+Windows on GitHub's runners and creates a draft release with the files and their SHA-256 sums. The workflow runs the
+same release scripts, which also work locally. They install from the lockfile, run lint, the type check and the
+tests, package, and print each artifact's size and SHA-256:
 
 ```sh
 scripts/build/build-linux.sh                                   # AppImage, on Linux
