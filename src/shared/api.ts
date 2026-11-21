@@ -262,6 +262,28 @@ export interface ExportDTO {
   bytes: number; totalBytes: number; filesDone: number; filesTotal: number; current: string | null;
 }
 
+/** A repo the last check has something to say about. `update`: the Hub has a newer version of `updateFiles` files the cache holds. */
+export interface UpdateResultDTO {
+  repoId: string; type: RepoType; status: 'update' | 'failed' | 'skipped'; updateFiles: number; message: string | null; checkedAt: number;
+}
+/**
+ * One repo checked on its own (the repo the user opened). `files`: the files the cache holds an older version of.
+ * `message`: why it is `failed` or `skipped`, or why the Hub could not be asked just now (the rest is then what was known).
+ */
+export interface UpdateRepoDTO {
+  repoId: string; type: RepoType; status: 'update' | 'current' | 'failed' | 'skipped'; commit: string | null;
+  files: Array<{ path: string; size: number }>; message: string | null; checkedAt: number | null;
+}
+/** `waitingUntil`: the Hub rate-limited the check, which goes on at this time (ms); null otherwise. */
+export interface UpdateCheckProgressDTO { running: boolean; done: number; total: number; current: string | null; waitingUntil: number | null }
+/**
+ * `results`: what still holds against the scan (a current repo has none). `checkedAt`: when the last run ended.
+ * `disabledReason`: why the Hub cannot be asked. `error`: why this session's last run stopped early.
+ */
+export interface UpdateCheckDTO {
+  progress: UpdateCheckProgressDTO; checkedAt: number | null; disabledReason: string | null; error: string | null; results: UpdateResultDTO[];
+}
+
 export interface HfcmApi {
   scan(): Promise<ApiResult<LibraryDTO>>;
   cancelScan(): Promise<ApiResult<null>>;
@@ -316,16 +338,27 @@ export interface HfcmApi {
   exportCancel(id: string): Promise<ApiResult<null>>;
   /** This session's exports, newest first. */
   exports(): Promise<ApiResult<ExportDTO[]>>;
+  /** Opens a cached repo's Hugging Face page in the default browser. Opens a repo's page: main builds the URL; the renderer sends only the id and the type, never a URL. */
+  openRepoPage(repoId: string, type: HubRepoType): Promise<ApiResult<null>>;
   onScanProgress(cb: (p: ScanProgressDTO) => void): () => void;
   onDownloadProgress(cb: (p: DownloadProgressDTO) => void): () => void;
   onDownloadDone(cb: (p: DownloadDoneDTO) => void): () => void;
+  /** What the last "Check for updates" found, and whether one is running. No Hub request. */
+  updateCheck(): Promise<ApiResult<UpdateCheckDTO>>;
+  /** Starts a check of every cached repo against the Hub and returns at once. BUSY while one runs; OFFLINE when download mode is off. */
+  updateCheckStart(): Promise<ApiResult<null>>;
+  /** Stops a running check; the findings of the last finished one are kept. */
+  updateCheckCancel(): Promise<ApiResult<null>>;
+  /** Checks one cached repo against the Hub now (one request) and replaces what was kept about it. NOT_FOUND when it is not cached. */
+  updateCheckRepo(repoId: string, type: HubRepoType): Promise<ApiResult<UpdateRepoDTO>>;
   onExportProgress(cb: (p: ExportDTO) => void): () => void;
+  onUpdateCheckProgress(cb: (p: UpdateCheckProgressDTO) => void): () => void;
 }
 /** The events: subscriptions, not invoke channels. */
-export type EventMethod = 'onScanProgress' | 'onDownloadProgress' | 'onDownloadDone' | 'onExportProgress';
+export type EventMethod = 'onScanProgress' | 'onDownloadProgress' | 'onDownloadDone' | 'onExportProgress' | 'onUpdateCheckProgress';
 export type InvokeMethod = Exclude<keyof HfcmApi, EventMethod>;
 
-/** The 37 invoke methods, in declaration order (a literal checked against `InvokeMethod`, never a bare declaration). */
+/** The 42 invoke methods, in declaration order (a literal checked against `InvokeMethod`, never a bare declaration). */
 export const API_METHODS = [
   'scan', 'cancelScan', 'repoDetail', 'previewSelection', 'planDelete', 'executePlan', 'listHeld', 'planRestore',
   'planEmpty', 'setAutoEmptyDays', 'planSync', 'executeSync', 'settings', 'diskInfo', 'startupNotices',
@@ -333,6 +366,7 @@ export const API_METHODS = [
   'hubLookup', 'downloadAdvice', 'downloadPreview', 'downloadStart', 'downloadPause', 'downloadResume', 'downloadCancel', 'downloads', 'recentLookups',
   'lookupGroups',
   'transferVolumes', 'transferDrive', 'transferOpen', 'exportPreview', 'exportStart', 'exportCancel', 'exports',
+  'openRepoPage', 'updateCheck', 'updateCheckStart', 'updateCheckCancel', 'updateCheckRepo',
 ] as const satisfies readonly InvokeMethod[];
 
 export const CHANNELS: Record<InvokeMethod, `hfcm:${InvokeMethod}`> =
@@ -341,5 +375,6 @@ export const SCAN_PROGRESS_EVENT = 'hfcm:scan-progress';
 export const DOWNLOAD_PROGRESS_EVENT = 'hfcm:download-progress';
 export const DOWNLOAD_DONE_EVENT = 'hfcm:download-done';
 export const EXPORT_PROGRESS_EVENT = 'hfcm:export-progress';
+export const UPDATE_CHECK_EVENT = 'hfcm:update-check';
 
 declare global { interface Window { api: HfcmApi } }

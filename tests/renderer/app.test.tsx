@@ -1,6 +1,6 @@
-import { act, screen, waitFor } from '@testing-library/react';
+import { act, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, expect, test } from 'vitest';
+import { beforeEach, expect, test, vi } from 'vitest';
 import { App } from '../../src/renderer/App';
 import { SHORTCUT_EVENT } from '../../src/renderer/lib/use-shortcuts';
 import { contextOf } from '../../src/renderer/lib/shortcuts';
@@ -69,4 +69,41 @@ test('contextOf: inputs, checkboxes in the groups table, plain elements', () => 
   expect(contextOf(null)).toBe('other');
   expect(contextOf(document)).toBe('other');
   document.body.innerHTML = '';
+});
+
+test('right-click a repo title → Open in Download tab switches mode and looks the repo up', async () => {
+  const user = userEvent.setup();
+  const hubLookup = vi.fn(makeFakeApi().hubLookup);
+  renderWithProviders(<App />, makeFakeApi({ hubLookup }));
+  await user.click(await screen.findByText('unsloth/Qwen3.6-27B-GGUF'));
+  const title = await screen.findByTestId('repo-title');
+  await user.pointer({ keys: '[MouseRight]', target: title });
+  await user.click(await screen.findByRole('menuitem', { name: 'Open in Download tab' }));
+  expect(await screen.findByTestId('lookup-repo')).toHaveTextContent('unsloth/Qwen3.6-27B-GGUF');
+  expect(hubLookup).toHaveBeenCalledWith('unsloth/Qwen3.6-27B-GGUF');
+  expect(screen.getByTestId('hub-input')).toHaveValue('unsloth/Qwen3.6-27B-GGUF');
+  expect(within(screen.getByRole('group', { name: 'Mode' })).getByRole('button', { name: 'Download' })).toHaveAttribute('aria-pressed', 'true');
+});
+
+test('the repo lists carry the right-click menu: the library list (Hub page, Download tab) and the recent look-ups (Hub page)', async () => {
+  const user = userEvent.setup();
+  const openRepoPage = vi.fn(makeFakeApi().openRepoPage);
+  renderWithProviders(<App />, makeFakeApi({ openRepoPage }));
+  const rowOf = async (id: string): Promise<HTMLElement> => {
+    const el = (await screen.findAllByTestId('repo-row')).find((r) => r.getAttribute('data-repo-id') === id);
+    if (!el) throw new Error(`no row ${id}`);
+    return el;
+  };
+  await user.pointer({ keys: '[MouseRight]', target: await rowOf('Qwen/Qwen3-32B') });
+  await user.click(await screen.findByRole('menuitem', { name: 'Open on Hugging Face' }));
+  expect(openRepoPage).toHaveBeenLastCalledWith('Qwen/Qwen3-32B', 'model');
+  expect(screen.queryByTestId('repo-title')).toBeNull();   // a right-click does not activate the row
+  await user.pointer({ keys: '[MouseRight]', target: await rowOf('Qwen/Qwen3-32B') });
+  await user.click(await screen.findByRole('menuitem', { name: 'Open in Download tab' }));
+  expect(await screen.findByTestId('hub-input')).toHaveValue('Qwen/Qwen3-32B');
+  await user.pointer({ keys: '[MouseRight]', target: await screen.findByTestId('recent-lookup') });
+  expect(screen.queryByRole('menuitem', { name: 'Open in Download tab' })).toBeNull();
+  await user.click(await screen.findByRole('menuitem', { name: 'Open on Hugging Face' }));
+  expect(openRepoPage).toHaveBeenLastCalledWith('bartowski/gemma-4-31b-it-GGUF', 'model');
+  expect(openRepoPage).toHaveBeenCalledTimes(2);
 });

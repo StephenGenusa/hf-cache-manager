@@ -8,8 +8,11 @@ import { formatBytes } from '../lib/format';
 import { useLibrary } from '../lib/queries';
 import { filterSortRepos, KIND_ORDER, type SortKey } from '../lib/repo-filter';
 import { SEARCH_TEST_ID, SHORTCUT_EVENT } from '../lib/use-shortcuts';
+import { useUpdateCheck } from '../lib/use-update-check';
 import type { ShortcutAction } from '../lib/shortcuts';
 import { cn } from '../lib/utils';
+import { RepoMenu } from './RepoMenu';
+import { UpdateCheckBar } from './UpdateCheckBar';
 import { Badge } from './ui/badge';
 import { Input } from './ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
@@ -34,6 +37,8 @@ export interface RepoListProps {
   /** Opens the Recently Deleted view. */
   onOpenHeld?(): void;
   heldActive?: boolean;
+  /** Right-click → "Open in Download tab": called with the text to look up on the Hub. */
+  onOpenInDownload?(hubInput: string): void;
 }
 
 function Chip({ on, onClick, children }: { on: boolean; onClick(): void; children: string }) {
@@ -47,7 +52,7 @@ function Chip({ on, onClick, children }: { on: boolean; onClick(): void; childre
   );
 }
 
-export function RepoList({ activeRepoId, onActivate, onOpenHeld, heldActive = false }: RepoListProps) {
+export function RepoList({ activeRepoId, onActivate, onOpenHeld, heldActive = false, onOpenInDownload }: RepoListProps) {
   const library = useLibrary();
   const lib = library.data;
   const [query, setQuery] = useState('');
@@ -56,6 +61,13 @@ export function RepoList({ activeRepoId, onActivate, onOpenHeld, heldActive = fa
   const [lmstudio, setLm] = useState(false);
   const [ollama, setOllama] = useState(false);
   const [partial, setPartial] = useState(false);
+  const [updatesOnly, setUpdatesOnly] = useState(false);
+  const check = useUpdateCheck();
+  /** `type:repoId` → how many of its files have a newer version on the Hub. */
+  const updates = useMemo(
+    () => new Map((check.data?.results ?? []).filter((u) => u.status === 'update').map((u) => [`${u.type}:${u.repoId}`, u.updateFiles])),
+    [check.data],
+  );
   const scrollRef = useRef<HTMLDivElement>(null);
   // Two repos can share an id: remember which row was clicked so only that one highlights.
   const [clicked, setClicked] = useState<{ type: string; repoId: string } | null>(null);
@@ -64,8 +76,8 @@ export function RepoList({ activeRepoId, onActivate, onOpenHeld, heldActive = fa
   const isActive = (r: RepoSummaryDTO) => !heldActive && r.repoId === activeRepoId && r.type === activeType;
 
   const repos = useMemo(
-    () => filterSortRepos(lib?.repos ?? [], { query, sort, kinds, lmstudio, ollama, partial }),
-    [lib, query, sort, kinds, lmstudio, ollama, partial],
+    () => filterSortRepos((lib?.repos ?? []).filter((r) => !updatesOnly || updates.has(rowKey(r))), { query, sort, kinds, lmstudio, ollama, partial }),
+    [lib, query, sort, kinds, lmstudio, ollama, partial, updatesOnly, updates],
   );
   const presentKinds = useMemo(() => {
     const seen = new Set<RepoKind>((lib?.repos ?? []).flatMap((r) => r.kinds));
@@ -125,7 +137,9 @@ export function RepoList({ activeRepoId, onActivate, onOpenHeld, heldActive = fa
         <Chip on={lmstudio} onClick={() => setLm((v) => !v)}>LM Studio</Chip>
         <Chip on={ollama} onClick={() => setOllama((v) => !v)}>Ollama</Chip>
         <Chip on={partial} onClick={() => setPartial((v) => !v)}>Partial downloads</Chip>
+        <Chip on={updatesOnly} onClick={() => setUpdatesOnly((v) => !v)}>Updates</Chip>
       </div>
+      <UpdateCheckBar check={check} />
 
       {problem !== null && lib !== undefined ? (
         <div role={problem === 'unreadable' ? 'alert' : undefined} data-testid="hub-problem" className="mx-2.5 flex-1 space-y-1 text-[13px] text-warning">
@@ -145,26 +159,31 @@ export function RepoList({ activeRepoId, onActivate, onOpenHeld, heldActive = fa
               const r = repos[v.index];
               if (r === undefined) return null;
               return (
-                <button
-                  key={v.key} type="button" data-testid="repo-row" data-repo-id={r.repoId} data-index={v.index}
-                  aria-current={isActive(r) ? 'true' : undefined}
-                  onClick={() => { setClicked({ type: r.type, repoId: r.repoId }); onActivate(r.repoId); }}
-                  className={cn(
-                    'absolute top-0 left-0 flex w-full cursor-pointer flex-col justify-center gap-0.5 border-b border-border/60 px-3 text-left hover:bg-accent/50',
-                    isActive(r) && 'bg-accent',
-                  )}
-                  style={{ height: ROW_HEIGHT, transform: `translateY(${v.start}px)` }}
-                >
-                  <span className="truncate text-[13px] text-foreground">{r.repoId}</span>
-                  <span className="flex items-center gap-1 overflow-hidden">
-                    <Badge tone={badgeTone(r)}>{r.badge}</Badge>
-                    {r.usage.lmstudio > 0 && <Badge>LM Studio</Badge>}
-                    {r.usage.ollama > 0 && <Badge>Ollama</Badge>}
-                    {r.partialDownloads > 0 && <Badge tone="warning">partial</Badge>}
-                    {r.ambiguous && <Badge tone="danger" title="Another repo of a different type has this id">shared id</Badge>}
-                    <span className="ml-auto text-xs text-muted-foreground">{formatBytes(r.apparentBytes)}</span>
-                  </span>
-                </button>
+                <RepoMenu key={v.key} repoId={r.repoId} type={r.type} onOpenInDownload={onOpenInDownload}>
+                  <button
+                    type="button" data-testid="repo-row" data-repo-id={r.repoId} data-index={v.index}
+                    aria-current={isActive(r) ? 'true' : undefined}
+                    onClick={() => { setClicked({ type: r.type, repoId: r.repoId }); onActivate(r.repoId); }}
+                    className={cn(
+                      'absolute top-0 left-0 flex w-full cursor-pointer flex-col justify-center gap-0.5 border-b border-border/60 px-3 text-left hover:bg-accent/50',
+                      isActive(r) && 'bg-accent',
+                    )}
+                    style={{ height: ROW_HEIGHT, transform: `translateY(${v.start}px)` }}
+                  >
+                    <span className="truncate text-[13px] text-foreground">{r.repoId}</span>
+                    <span className="flex items-center gap-1 overflow-hidden">
+                      <Badge tone={badgeTone(r)}>{r.badge}</Badge>
+                      {r.usage.lmstudio > 0 && <Badge>LM Studio</Badge>}
+                      {r.usage.ollama > 0 && <Badge>Ollama</Badge>}
+                      {r.partialDownloads > 0 && <Badge tone="warning">partial</Badge>}
+                      {updates.has(rowKey(r)) && (
+                        <Badge data-testid="update-badge" tone="warning" title={`${updates.get(rowKey(r))} ${updates.get(rowKey(r)) === 1 ? 'file has' : 'files have'} a newer version on the Hub`}>update</Badge>
+                      )}
+                      {r.ambiguous && <Badge tone="danger" title="Another repo of a different type has this id">shared id</Badge>}
+                      <span className="ml-auto text-xs text-muted-foreground">{formatBytes(r.apparentBytes)}</span>
+                    </span>
+                  </button>
+                </RepoMenu>
               );
             })}
           </div>

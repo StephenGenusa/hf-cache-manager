@@ -144,3 +144,11 @@ test('an unfinished download has Cancel and no Clear', async () => {
   expect(within(drawer).getByRole('button', { name: 'Cancel' })).toBeInTheDocument();
   expect(within(drawer).queryByRole('button', { name: 'Clear' })).toBeNull();
 });
+
+test('a file that is verifying shows what is being checked, so a long check of the unchanged files does not look stuck', async () => {
+  const note = 'Checking 6 unchanged files already in the cache before linking them: 21.0 GB of 57.7 GB';
+  renderWithProviders(<App />, makeFakeApi({ downloads: queue([item({ path: 'README.md', size: 3354, bytes: 3354, state: 'verifying', error: note })]) }));
+  const { drawer } = await open();
+  expect(within(drawer).getByTestId('download-state')).toHaveTextContent('Verifying');
+  expect(within(drawer).getByTestId('download-progress-note')).toHaveTextContent(note);
+});

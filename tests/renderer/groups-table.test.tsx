@@ -2,8 +2,9 @@ import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, expect, test, vi } from 'vitest';
 import { RepoDetail } from '../../src/renderer/components/RepoDetail';
+import { hubInputFor } from '../../src/renderer/components/RepoMenu';
 import { useSelection } from '../../src/renderer/state/selection';
-import type { FileEntryDTO, LibraryDTO, RepoDetailDTO } from '../../src/shared/api';
+import type { FileEntryDTO, HfcmApi, LibraryDTO, RepoDetailDTO } from '../../src/shared/api';
 import { FLUX_DETAIL, LIBRARY, QWEN_DETAIL, group, makeFakeApi, renderWithProviders } from './fake-api';
 
 const selectedKeys = (): string[] => Object.values(useSelection.getState().byRepo).flatMap((v) => v.groupKeys);
@@ -219,4 +220,46 @@ test('a "Files only in dev" group is listed and selectable like any other group'
   expect(row).toHaveTextContent('Files only in dev');
   await user.click(within(row).getByRole('checkbox'));
   expect(selectedKeys()).toEqual(['other:Files only in dev']);
+});
+
+test('the repo title opens the Hub page on a click; its right-click menu sends the repo to the Download tab', async () => {
+  const user = userEvent.setup();
+  const openRepoPage = vi.fn<HfcmApi['openRepoPage']>(() => Promise.resolve({ ok: true, data: null }));
+  const onOpenInDownload = vi.fn();
+  renderWithProviders(
+    <RepoDetail repoId={QWEN_DETAIL.repoId} onDeleteWholeRepo={vi.fn()} onOpenInDownload={onOpenInDownload} />,
+    makeFakeApi({ repoDetail: () => Promise.resolve({ ok: true, data: QWEN_DETAIL }), openRepoPage }),
+  );
+  const title = await screen.findByTestId('repo-title');
+  await user.click(title);
+  expect(openRepoPage).toHaveBeenCalledWith('unsloth/Qwen3.6-27B-GGUF', 'model');
+  expect(onOpenInDownload).not.toHaveBeenCalled();
+  await user.pointer({ keys: '[MouseRight]', target: title });
+  await user.click(await screen.findByRole('menuitem', { name: 'Open in Download tab' }));
+  expect(onOpenInDownload).toHaveBeenCalledWith('unsloth/Qwen3.6-27B-GGUF');
+  expect(openRepoPage).toHaveBeenCalledTimes(1);
+  await user.pointer({ keys: '[MouseRight]', target: title });
+  await user.click(await screen.findByRole('menuitem', { name: 'Open on Hugging Face' }));
+  expect(openRepoPage).toHaveBeenCalledTimes(2);
+});
+
+test('hubInputFor prefixes datasets and spaces', () => {
+  expect(hubInputFor('model', 'a/b')).toBe('a/b');
+  expect(hubInputFor('dataset', 'a/b')).toBe('datasets/a/b');
+  expect(hubInputFor('space', 'a/b')).toBe('spaces/a/b');
+});
+
+test('Select All ticks every group of the repo; locked components stay out until unlocked', async () => {
+  const user = userEvent.setup();
+  const { unmount } = renderWithProviders(<RepoDetail repoId={QWEN_DETAIL.repoId} onDeleteWholeRepo={vi.fn()} />, detailApi(QWEN_DETAIL));
+  await screen.findAllByTestId('group-row');
+  await user.click(screen.getByTestId('btn-select-all'));
+  expect(selectedKeys().sort()).toEqual(QWEN_DETAIL.groups.map((g) => g.key).sort());
+  expect(screen.getAllByTestId('group-row').every((r) => r.getAttribute('data-checked') === 'true')).toBe(true);
+  unmount();
+  useSelection.getState().clear();
+  renderWithProviders(<RepoDetail repoId={FLUX} onDeleteWholeRepo={vi.fn()} />, detailApi(FLUX_DETAIL));
+  await screen.findAllByTestId('group-row');
+  await user.click(screen.getByTestId('btn-select-all'));
+  expect(selectedKeys()).toEqual(['root-file:flux1-dev.safetensors']);
 });

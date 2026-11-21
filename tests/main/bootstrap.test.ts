@@ -279,6 +279,19 @@ test('download progress and download-done events go to the window on their own c
   expect(r.win.sent).toHaveLength(2);
 });
 
+test('update-check progress goes to the window on its own channel and reaches the production services', async () => {
+  const r = rig();
+  let ev: Parameters<BootDeps['buildServices']>[0] | null = null;
+  r.deps.buildServices = (ctx) => { ev = ctx; return r.svc as unknown as ServiceSurface; };
+  await bootstrap(r.deps);
+  const p = { running: true, done: 1, total: 4, current: 'o/n', waitingUntil: null };
+  ev!.emitUpdateCheck(p);
+  expect(r.win.sent).toEqual([['hfcm:update-check', p]]);
+  const emitUpdateCheck = (): void => undefined;
+  const deps = productionServicesDeps({ userDataDir: USER_DATA, env: {}, home: HOME, platform: 'linux', emitProgress: () => undefined, emitUpdateCheck });
+  expect(deps.emitUpdateCheck).toBe(emitUpdateCheck);
+});
+
 test('progress before the window exists is dropped, not thrown', async () => {
   const r = rig();
   r.deps.buildServices = ({ emitProgress }) => { emitProgress({ phase: 'scan', done: 0, total: 1 }); return r.svc as unknown as ServiceSurface; };

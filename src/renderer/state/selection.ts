@@ -9,6 +9,8 @@ interface SelectionStore {
   toggleGroup(repoId: string, key: string, locked: boolean): void;
   /** Turning unlock off also drops the selected locked groups (`lockedKeys` are the repo's locked group keys). */
   setUnlock(repoId: string, on: boolean, lockedKeys: string[]): void;
+  /** Selects every group of the repo; locked groups only while its components are unlocked. */
+  selectAll(repoId: string, groups: Array<{ key: string; locked: boolean }>): void;
   clear(): void;
   /** After a rescan: drops repos and group keys that no longer exist, silently. */
   reconcile(lib: Array<{ repoId: string; groupKeys: string[] }>): void;
@@ -41,6 +43,15 @@ export const useSelection = create<SelectionStore>()((set, get) => ({
       const groupKeys = on ? cur.groupKeys : cur.groupKeys.filter((k) => !lockedKeys.includes(k));
       if (groupKeys.length === 0 && !on) return { byRepo: without(s.byRepo, repoId) };
       return { byRepo: { ...s.byRepo, [repoId]: { groupKeys, unlockComponents: on } } };
+    });
+  },
+
+  selectAll(repoId, groups) {
+    set((s) => {
+      const unlockComponents = s.byRepo[repoId]?.unlockComponents ?? false;
+      const groupKeys = groups.filter((g) => !g.locked || unlockComponents).map((g) => g.key);
+      if (groupKeys.length === 0) return s;
+      return { byRepo: { ...s.byRepo, [repoId]: { groupKeys, unlockComponents } } };
     });
   },
 

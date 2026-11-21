@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { TransferDriveDTO, TransferRepoDTO, TransferVolumeDTO } from '../../shared/api';
 import { useApi } from '../lib/api';
 import { formatBytes } from '../lib/format';
+import { RepoMenu } from './RepoMenu';
 import { Button } from './ui/button';
 
 export const NO_EXPORTS_TEXT = 'No drive with exported models was found. Connect the drive, then choose Refresh.';
@@ -89,8 +90,9 @@ export function LoadFromDrive({ activeKey, onOpen, onBack }: LoadFromDriveProps)
             {drive.notes.map((n) => <p key={n} data-testid="drive-note" className="px-3 pb-1 text-xs text-warning">{n}</p>)}
             {drive.repos.length === 0 && <p className="px-3 text-xs text-muted-foreground">This drive has no complete export on it.</p>}
             {drive.repos.map((r) => (
+              <RepoMenu key={r.key} repoId={r.repoId} type={r.type}>
               <button
-                key={r.key} type="button" data-testid="drive-repo" data-repo-key={r.key} disabled={r.files === 0}
+                type="button" data-testid="drive-repo" data-repo-key={r.key} disabled={r.files === 0}
                 aria-current={activeKey === r.key ? 'true' : undefined} onClick={() => onOpen(drive.volume.id, r)}
                 className={`block w-full cursor-pointer border-b border-border/60 px-3 py-2 text-left hover:bg-accent/50 disabled:cursor-not-allowed disabled:opacity-60 ${activeKey === r.key ? 'bg-accent' : ''}`}
               >
@@ -103,6 +105,7 @@ export function LoadFromDrive({ activeKey, onOpen, onBack }: LoadFromDriveProps)
                   <div className="text-[11px] text-warning">{`${r.incompleteFiles} ${r.incompleteFiles === 1 ? 'file is' : 'files are'} incomplete on the drive and cannot be loaded`}</div>
                 )}
               </button>
+              </RepoMenu>
             ))}
           </>
         )}

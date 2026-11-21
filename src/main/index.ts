@@ -1,5 +1,5 @@
 // Electron entry: wires the real `app`, `ipcMain`, `dialog` and window into `bootstrap` (src/main/bootstrap.ts).
-import { app, dialog, ipcMain } from 'electron';
+import { app, dialog, ipcMain, shell } from 'electron';
 import { homedir, userInfo } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -46,7 +46,7 @@ void bootstrap({
   home: homedir(),
   platform: process.platform,
   harden: hardenElectronWebContents,
-  buildServices: (ctx) => createProductionServices({ ...ctx, env: process.env, home: homedir(), platform: process.platform, user: loginName() }),
+  buildServices: (ctx) => createProductionServices({ ...ctx, env: process.env, home: homedir(), platform: process.platform, user: loginName(), openExternal: (url) => shell.openExternal(url) }),
   createWindow: () => createMainWindow({
     preloadPath: join(here, '../preload/index.cjs'), rendererUrl, isPackaged: app.isPackaged, rendererFile,
   }),

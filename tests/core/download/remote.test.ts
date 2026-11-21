@@ -1,7 +1,7 @@
 import { writeFile } from 'node:fs/promises';
 import { describe, expect, it } from 'vitest';
 import { classifyRepo } from '../../../src/core/classify/classify';
-import { fileStates, requiresBytes, unchangedLinks } from '../../../src/core/download/cache-state';
+import { fileStates, outdatedFiles, requiresBytes, unchangedLinks } from '../../../src/core/download/cache-state';
 import { remoteRepo, repoFolderName, toRemoteListing, type RemoteListing } from '../../../src/core/download/remote-repo';
 import { parseRepoFolder, scanHub } from '../../../src/core/scan/scanner';
 import type { RepoType } from '../../../src/core/types';
@@ -254,5 +254,42 @@ describe('fileStates / requiresBytes / unchangedLinks', () => {
     const l = mk([['d.bin', 10, hex('dang')], ['e.txt', 4, 'e'.repeat(40)]]);
     expect([...fileStates(l, model).values()]).toEqual([{ kind: 'absent' }, { kind: 'absent' }]);
     expect(unchangedLinks(l, model)).toEqual([]);
+  });
+});
+
+describe('outdatedFiles', () => {
+  it('names the files the cache holds whose Hub version is not in it: updates and interrupted updates, never new or cached files', async () => {
+    const hb = await hubBuilder();
+    const rb = hb.repo('o/m');
+    await rb.blob(hex('same'), 10);
+    await rb.link(OLD, 'same.bin', hex('same'));
+    await rb.blob(hex('o1'), 20);
+    await rb.link(OLD, 'changed.bin', hex('o1'));
+    await rb.blob(hex('o2'), 20);
+    await rb.link(OLD, 'resuming.bin', hex('o2'));
+    await rb.incomplete(hex('n2'), 12);      // an update of resuming.bin that was interrupted
+    await rb.incomplete(hex('fresh'), 5);    // a new file being downloaded for the first time: not an update
+    await rb.main(OLD);
+    const model = await scanHub(hb.hub);
+    const l = mk([
+      ['same.bin', 10, hex('same')], ['changed.bin', 30, hex('n1')], ['resuming.bin', 30, hex('n2')],
+      ['fresh.bin', 9, hex('fresh')], ['never-had.bin', 9, hex('x')],
+    ]);
+    expect(outdatedFiles(l, model).map((f) => f.path)).toEqual(['changed.bin', 'resuming.bin']);
+    expect(outdatedFiles(l, model)[0]).toEqual({ path: 'changed.bin', size: 30, etag: hex('n1'), lfs: true });
+  });
+
+  it('is empty for a repo that is not cached, and once the new blobs are in the cache', async () => {
+    const hb = await hubBuilder();
+    const rb = hb.repo('o/m');
+    await rb.blob(hex('o1'), 20);
+    await rb.link(OLD, 'changed.bin', hex('o1'));
+    await rb.main(OLD);
+    const l = mk([['changed.bin', 30, hex('n1')]]);
+    expect(outdatedFiles({ ...l, repoId: 'x/y' }, await scanHub(hb.hub))).toEqual([]);
+    expect(outdatedFiles(l, await scanHub(hb.hub))).toHaveLength(1);
+    await rb.blob(hex('n1'), 30);
+    await rb.link(COMMIT, 'changed.bin', hex('n1'));
+    expect(outdatedFiles(l, await scanHub(hb.hub))).toEqual([]);
   });
 });

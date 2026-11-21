@@ -8,6 +8,7 @@ import { SafeFs, SafeFsError } from '../core/safe-fs';
 import type { DiskInfoDTO } from '../shared/api';
 import { ADVICE_SETTINGS } from '../shared/ipc-schemas';
 import { DOWNLOADS_BLOCK, EMPTY_DOWNLOADS, RECENT_LOOKUPS, type DownloadsBlock, type RecentLookup } from './download/queue';
+import { EMPTY_UPDATE_CHECK, UPDATE_CHECK_BLOCK, type UpdateCheckBlock } from './update-block';
 
 /** Defaults for the advice block: nothing assumed about the hardware (it is detected), llama.cpp-style context and KV. */
 export const DEFAULT_ADVICE: AdviceSettings = {
@@ -18,8 +19,12 @@ export const DEFAULT_ADVICE: AdviceSettings = {
  * Acknowledged startup notices live in the journal, not here. `autoEmptyDays` null is "Never".
  * `downloads`: the download queue; absent until the engine first saves one. Every writer spreads the
  * current settings so it is kept. `recentLookups`: the last 20 Hub look-ups, newest first, parsed the same way.
+ * `updateCheck`: what the last "Check for updates" found (update-block.ts); a bad block is an empty one.
  */
-export interface AppSettings { autoEmptyDays: number | null; advice: AdviceSettings; downloads?: DownloadsBlock; recentLookups?: RecentLookup[] }
+export interface AppSettings {
+  autoEmptyDays: number | null; advice: AdviceSettings; downloads?: DownloadsBlock; recentLookups?: RecentLookup[];
+  updateCheck?: UpdateCheckBlock;
+}
 export const DEFAULT_SETTINGS: AppSettings = { autoEmptyDays: AUTO_EMPTY_DEFAULT_DAYS, advice: DEFAULT_ADVICE };
 
 export const SETTINGS_FILE = 'settings.json';
@@ -75,6 +80,15 @@ function parseRecent(raw: unknown): { recentLookups?: RecentLookup[] } {
   return { recentLookups: r.success ? r.data : [] };
 }
 
+/** Like recent look-ups: a missing block is absent; a bad one is the empty block. Never touches auto-empty. */
+function parseUpdateCheck(raw: unknown): { updateCheck?: UpdateCheckBlock } {
+  const block = typeof raw === 'object' && raw !== null && !Array.isArray(raw) && 'updateCheck' in raw
+    ? (raw as { updateCheck: unknown }).updateCheck : undefined;
+  if (block === undefined) return {};
+  const r = UPDATE_CHECK_BLOCK.safeParse(block);
+  return { updateCheck: r.success ? r.data : EMPTY_UPDATE_CHECK };
+}
+
 export interface CheckedSettings { settings: AppSettings; error: string | null; adviceError: string | null; downloadsError: string | null }
 
 /** null error: auto-empty is valid. Otherwise why the file cannot be trusted. Advice and queue problems go to their own error only. */
@@ -87,7 +101,7 @@ function parse(text: string): CheckedSettings {
   }
   const { advice, adviceError } = parseAdvice(raw);
   const { downloads, downloadsError } = parseDownloads(raw);
-  const rest = { advice, ...(downloads ? { downloads } : {}), ...parseRecent(raw) };
+  const rest = { advice, ...(downloads ? { downloads } : {}), ...parseRecent(raw), ...parseUpdateCheck(raw) };
   const days = typeof raw === 'object' && raw !== null && !Array.isArray(raw) && 'autoEmptyDays' in raw
     ? (raw as { autoEmptyDays: unknown }).autoEmptyDays : undefined;
   if (days === null) return { settings: { autoEmptyDays: null, ...rest }, error: null, adviceError, downloadsError };
@@ -149,6 +163,7 @@ export class AppSettingsStore {
     const out = {
       autoEmptyDays: s.autoEmptyDays, advice: s.advice, ...(s.downloads ? { downloads: s.downloads } : {}),
       ...(s.recentLookups ? { recentLookups: s.recentLookups } : {}),
+      ...(s.updateCheck ? { updateCheck: s.updateCheck } : {}),
     };
     await safe.writeFileAtomic(join(this.userDataDir, SETTINGS_FILE), JSON.stringify(out, null, 2));
   }

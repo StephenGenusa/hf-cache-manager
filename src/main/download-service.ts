@@ -314,6 +314,12 @@ export class DownloadService {
     return ok(this.current);
   }
 
+  /** A client with the token as it is now, for a check of the whole library; OFFLINE when download mode is off. */
+  async checkClient(): Promise<ApiResult<HubClient>> {
+    const c = await this.hubClient(true);
+    return c.ok ? ok(c.data.client) : c;
+  }
+
   /**
    * Called once at service start (bootstrap): builds the engine and restores the saved queue, so paused downloads
    * exist before any download call. Never throws; with download mode off or no cache, nothing is built.

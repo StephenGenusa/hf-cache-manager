@@ -1,5 +1,21 @@
 # Changelog
 
+## Unreleased
+
+- **Check for updates:** one click compares every cached repo with its `main` revision on the Hub and gives an
+  **update** badge to each repo where the Hub has a newer version of a file you already have. The **Updates** chip
+  keeps only those repos. The findings are saved, survive a restart, and clear once the files are refreshed. Opening a
+  badged repo checks it again and marks the groups and files with a newer version. The check uses your token for gated
+  and private repos, waits as long as the Hub asks when it rate-limits, and can be cancelled.
+- **Repo menu:** right-click a repo in the library, a looked-up repo or a recent look-up for **Open on Hugging Face**;
+  library repos also have **Open in Download tab**. Clicking a repo's name opens its Hugging Face page.
+- **Select All** ticks every group of the open repo. Locked components stay out until they are unlocked.
+- **Downloads:** when a new revision reuses files already in the cache, they are checked against their hash before
+  they are linked, and the file's line shows how much has been checked, so a long check no longer looks stuck.
+- **Fix: clearer error for a mismatched cached file.** When the cache already holds a file under the Hub's name with
+  other content, the download now says so and how to clear it (delete it from the library, then download again),
+  instead of "a different file is already there".
+
 ## 1.1.0 — 2026-11-19
 
 - **Export to drive:** copy models from the library to a USB drive. The app shows the connected drives, checks that

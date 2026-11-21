@@ -91,3 +91,18 @@ export function unchangedLinks(l: RemoteListing, model: CacheModel): Array<{ pat
     .filter((f) => hasBlob(repo, model, f.etag, f.size) && !linked.has(f.path))
     .map((f) => ({ path: f.path, etag: f.etag }));
 }
+
+/**
+ * The listing's files the cache already holds an older version of: some snapshot has the path, and the Hub's blob is
+ * not in the cache (an update, or an update whose download was interrupted). A file the cache never had is not one.
+ */
+export function outdatedFiles(l: RemoteListing, model: CacheModel): RemoteListing['files'] {
+  const repo = cachedRepo(l, model);
+  if (!repo) return [];
+  const held = new Set(repo.files.map((f) => f.relpath));
+  const states = fileStates(l, model);
+  return l.files.filter((f) => {
+    const kind = states.get(f.path)?.kind;
+    return held.has(f.path) && (kind === 'update' || kind === 'partial');
+  });
+}

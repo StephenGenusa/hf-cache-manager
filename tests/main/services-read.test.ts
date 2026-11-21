@@ -10,7 +10,7 @@ import type { DeletionPlan, Selection } from '../../src/core/types';
 import { createCorePort, type CorePort } from '../../src/main/core-port';
 import { toRepoDetail } from '../../src/main/dto';
 import { inProcessScanRunner, type ScanRunner } from '../../src/main/scan-client';
-import { AppServices, type ServicesDeps } from '../../src/main/services';
+import { AppServices, repoPageUrl, type ServicesDeps } from '../../src/main/services';
 import type { ApiResult, ScanProgressDTO } from '../../src/shared/api';
 import { buildAppFixture, type AppFixture } from '../helpers/app-fixture';
 import { useCanaries } from '../helpers/canary';
@@ -108,6 +108,17 @@ test('missing hub: hubPresent false with the port message, no runner call, detai
   expect(unwrap(await h2.svc.scan()).scanError).toBe(`Cache not found at ${fx.configFile} (not a folder).`);
   const s = unwrap(await h2.svc.settings());
   expect(s).toMatchObject({ hubPresent: false, holdRoot: null });
+});
+
+test('openRepoPage opens the huggingface.co page built from the id and type; without an opener it refuses', async () => {
+  const opened: string[] = [];
+  const { svc } = await app({ openExternal: (url) => { opened.push(url); return Promise.resolve(); } });
+  expect(await svc.openRepoPage(Q, 'model')).toEqual({ ok: true, data: null });
+  expect(await svc.openRepoPage('org/data', 'dataset')).toEqual({ ok: true, data: null });   // not in the cache: a Download-tab repo
+  expect(opened).toEqual([`https://huggingface.co/${Q}`, 'https://huggingface.co/datasets/org/data']);
+  expect(repoPageUrl('space', 'org/demo')).toBe('https://huggingface.co/spaces/org/demo');
+  const bare = await app();
+  expect(await bare.svc.openRepoPage(Q, 'model')).toMatchObject({ ok: false, error: { code: 'INTERNAL' } });
 });
 
 test('repoDetail: unknown is NOT_FOUND, a known repo matches the dto, and it scans first when nothing was scanned', async () => {

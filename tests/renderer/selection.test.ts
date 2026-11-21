@@ -83,3 +83,14 @@ test('an unlock flag with no groups does not make a selection', () => {
   useSelection.getState().setUnlock('a/b', false, []);
   expect(useSelection.getState().byRepo).toEqual({});
 });
+
+test('selectAll takes every group; locked ones only while components are unlocked', () => {
+  const groups = [{ key: 'component:vae/', locked: true }, { key: 'root-file:a.safetensors', locked: false }];
+  useSelection.getState().selectAll('a/b', groups);
+  expect(useSelection.getState().byRepo['a/b']).toEqual({ groupKeys: ['root-file:a.safetensors'], unlockComponents: false });
+  useSelection.getState().setUnlock('a/b', true, ['component:vae/']);
+  useSelection.getState().selectAll('a/b', groups);
+  expect(useSelection.getState().byRepo['a/b']).toEqual({ groupKeys: ['component:vae/', 'root-file:a.safetensors'], unlockComponents: true });
+  useSelection.getState().selectAll('c/d', [{ key: 'component:vae/', locked: true }]);
+  expect(useSelection.getState().byRepo['c/d']).toBeUndefined();
+});

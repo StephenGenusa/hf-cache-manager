@@ -130,13 +130,20 @@ test('failures carry a message and no args', () => {
 
 test('every invoke method has a schema and a channel', () => {
   expect(Object.keys(ARG_SCHEMAS).sort()).toEqual([...API_METHODS].sort());
-  expect(API_METHODS).toHaveLength(37);
-  expect(new Set(API_METHODS).size).toBe(37);
+  expect(API_METHODS).toHaveLength(42);
+  expect(new Set(API_METHODS).size).toBe(42);
   expect(API_METHODS.slice(16, 20)).toEqual(['advice', 'machineProfile', 'setAdviceSettings', 'redetectMachine']);
   expect(API_METHODS.slice(20, 30)).toEqual([
     'hubLookup', 'downloadAdvice', 'downloadPreview', 'downloadStart', 'downloadPause', 'downloadResume', 'downloadCancel', 'downloads', 'recentLookups',
     'lookupGroups']);
-  expect(API_METHODS.slice(-7)).toEqual(['transferVolumes', 'transferDrive', 'transferOpen', 'exportPreview', 'exportStart', 'exportCancel', 'exports']);
+  expect(API_METHODS.slice(-12)).toEqual(['transferVolumes', 'transferDrive', 'transferOpen', 'exportPreview', 'exportStart', 'exportCancel', 'exports', 'openRepoPage',
+    'updateCheck', 'updateCheckStart', 'updateCheckCancel', 'updateCheckRepo']);
+  expect(parseArgs('updateCheckRepo', ['org/name', 'model']).ok).toBe(true);
+  expect(parseArgs('updateCheckRepo', ['../x', 'model']).ok).toBe(false);
+  expect(parseArgs('openRepoPage', ['org/name', 'dataset']).ok).toBe(true);
+  expect(parseArgs('openRepoPage', ['org/name', 'https://evil.example']).ok).toBe(false);
+  expect(parseArgs('updateCheckStart', []).ok).toBe(true);
+  expect(parseArgs('updateCheckStart', ['x']).ok).toBe(false);
   for (const m of API_METHODS) expect(CHANNELS[m]).toBe(`hfcm:${m}`);
   expect(SCAN_PROGRESS_EVENT).toBe('hfcm:scan-progress');
   expect(DOWNLOAD_PROGRESS_EVENT).toBe('hfcm:download-progress');
@@ -237,7 +244,7 @@ describe('type contract', () => {
     expectTypeOf<(typeof API_METHODS)[number]>().toEqualTypeOf<InvokeMethod>();
     expectTypeOf<'CONFIG'>().toExtend<ApiErrorCode>();
     expectTypeOf<SettingsDTO['platform']>().toExtend<string>();
-    expect(API_METHODS).toHaveLength(37); // the assertions above are compile-time; typecheck is the gate
+    expect(API_METHODS).toHaveLength(42); // the assertions above are compile-time; typecheck is the gate
   });
 });
 

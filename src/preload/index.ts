@@ -1,7 +1,7 @@
 // The only thing the sandboxed renderer gets: the typed API, built from the channel table. No ipcRenderer, no Node.
 // Imports only `electron` and the shared contract (bundled into the preload; nothing else is `require`d at runtime).
 import { contextBridge, ipcRenderer } from 'electron';
-import { API_METHODS, CHANNELS, DOWNLOAD_DONE_EVENT, DOWNLOAD_PROGRESS_EVENT, EXPORT_PROGRESS_EVENT, SCAN_PROGRESS_EVENT } from '../shared/api';
+import { API_METHODS, CHANNELS, DOWNLOAD_DONE_EVENT, DOWNLOAD_PROGRESS_EVENT, EXPORT_PROGRESS_EVENT, SCAN_PROGRESS_EVENT, UPDATE_CHECK_EVENT } from '../shared/api';
 import type { EventMethod, HfcmApi } from '../shared/api';
 
 const invokers = Object.fromEntries(
@@ -23,6 +23,7 @@ const api: HfcmApi = {
   onDownloadProgress: subscribe(DOWNLOAD_PROGRESS_EVENT),
   onDownloadDone: subscribe(DOWNLOAD_DONE_EVENT),
   onExportProgress: subscribe(EXPORT_PROGRESS_EVENT),
+  onUpdateCheckProgress: subscribe(UPDATE_CHECK_EVENT),
 };
 
 contextBridge.exposeInMainWorld('api', api);

@@ -259,6 +259,26 @@ describe('open()', () => {
     expect(sleep.calls).toEqual([]);
   });
 
+  test('429 is RATE_LIMITED and carries Retry-After (seconds) as retryAfterMs; absent or unreadable is null', async () => {
+    const answer = (headers: Record<string, string>) => (async () => new Response('', { status: 429, headers })) as unknown as typeof fetch;
+    const make = (f: typeof fetch) => createHubClient({ endpoint: loopEp('http://127.0.0.1:9'), token: null, fetch: f, sleep: noSleep() });
+    expect(await hubError(make(answer({ 'retry-after': '7' })).revision('org/m', 'model', 'main')))
+      .toMatchObject({ code: 'RATE_LIMITED', retryAfterMs: 7000, message: expect.stringMatching(/rate-limit/) });
+    expect(await hubError(make(answer({})).revision('org/m', 'model', 'main'))).toMatchObject({ code: 'RATE_LIMITED', retryAfterMs: null });
+    expect(await hubError(make(answer({ 'retry-after': 'soon' })).revision('org/m', 'model', 'main'))).toMatchObject({ code: 'RATE_LIMITED', retryAfterMs: null });
+  });
+
+  test('revision takes a signal: aborting it stops the request with the abort reason', async () => {
+    const ctl = new AbortController();
+    const f = ((_u: unknown, init?: RequestInit) => new Promise((_res, rej) => {
+      init?.signal?.addEventListener('abort', () => rej(init.signal!.reason as Error), { once: true });
+    })) as unknown as typeof fetch;
+    const c = createHubClient({ endpoint: loopEp('http://127.0.0.1:9'), token: null, fetch: f, sleep: noSleep() });
+    const p = c.revision('org/m', 'model', 'main', ctl.signal);
+    setTimeout(() => ctl.abort(new Error('check cancelled')), 20);
+    await expect(p).rejects.toThrow('check cancelled');
+  });
+
   test('file paths encoded per segment; datasets resolve under /datasets/', async () => {
     const h = await start();
     const r = await client(h).open('org/model', 'model', C1, 'dir/a b#.txt', 0, new AbortController().signal);

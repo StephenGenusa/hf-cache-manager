@@ -15,6 +15,7 @@ import type { AppLock } from '../../core/exec/lock';
 import { factsMatch, factsOf, isNotFound, readFs, type ReadFs } from '../../core/fsx';
 import { SafeFs, SafeFsError } from '../../core/safe-fs';
 import type { FileFacts } from '../../core/types';
+import { formatBytes } from '../../shared/format';
 import { isCommitHash } from '../../shared/hub-input';
 import type { AppSettingsStore } from '../app-settings';
 import { HubClientError, type HubClient } from '../hub/client';
@@ -41,6 +42,8 @@ export const MSG = {
   cannotResume: 'the server cannot resume this file',
   partialMismatch: 'the partial file does not match the Hub; delete it from the library and retry',
   different: 'a different file is already there',
+  /** blobs/<etag> exists but its size or content hash is not the Hub's: the cached file does not match its own name. */
+  blobMismatch: 'the cache already has a file under this name with other content than the Hub\'s; delete it from the library, then download again',
   cachedMismatch: 'a cached file does not match the Hub',
   partialTooBig: 'the partial file is larger than the file on the Hub; delete it from the library and retry',
   partialNotFile: 'the partial file is not a regular file; delete it from the library and retry',
@@ -568,11 +571,27 @@ export class DownloadEngine {
       throw new Stop('paused-disk', `${MSG.diskFull} (the unchanged files still to copy need ${links} bytes)`);
     }
     const bad: string[] = [];
+    // Hashing the unchanged files can take minutes (they are often the repo's large weights, and the file being
+    // committed a README): the file's line says what is being read and how far it is, so it never looks stuck.
+    let total = 0;
+    for (const l of item.links) {
+      const src = await dfs.blobSource(l.etag);
+      if (src?.ok === true) total += src.facts.size;
+    }
+    let read = 0;
+    const n = item.links.length;
+    const checking = (force: boolean): void => {
+      if (n > 0) this.note(item, f, `Checking ${n} unchanged ${n === 1 ? 'file' : 'files'} already in the cache before linking ${n === 1 ? 'it' : 'them'}: ${formatBytes(Math.min(read, total))} of ${formatBytes(total)}`, force);
+    };
+    checking(true);
     for (const l of item.links) {
       // The cached blob is linked only after its content hash (which covers its size) matches the Hub's etag; a
       // store link is checked through its payload.
       const src = await dfs.blobSource(l.etag);
-      if (src === null || !src.ok || !(await this.hashMatches(src.path, src.facts, { size: src.facts.size, etag: l.etag, lfs: l.etag.length === 64 }))) {
+      const same = src !== null && src.ok && await this.hashMatches(src.path, src.facts, { size: src.facts.size, etag: l.etag, lfs: l.etag.length === 64 },
+        (bytes) => { read += bytes; checking(false); });
+      checking(true);
+      if (src === null || !src.ok || !same) {
         bad.push(l.path);
         continue;
       }
@@ -674,13 +693,13 @@ export class DownloadEngine {
   private async verifyBlob(dfs: DownloadFs, f: QueueFile): Promise<Usable> {
     const src = await dfs.blobSource(f.etag);
     if (src !== null && !src.ok && src.reason === 'dangling') throw new Stop('failed', MSG.danglingStore);
-    if (src === null || !src.ok || src.facts.size !== f.size || !(await this.hashMatches(src.path, src.facts, f))) throw new Stop('failed', MSG.different);
+    if (src === null || !src.ok || src.facts.size !== f.size || !(await this.hashMatches(src.path, src.facts, f))) throw new Stop('failed', MSG.blobMismatch);
     return src;
   }
 
-  private async hashMatches(p: string, facts: FileFacts, file: { size: number; etag: string; lfs: boolean }): Promise<boolean> {
+  private async hashMatches(p: string, facts: FileFacts, file: { size: number; etag: string; lfs: boolean }, onBytes?: (n: number) => void): Promise<boolean> {
     const h = hasherFor(file);
-    await (await this.d.safeFs()).readChunks(p, facts, (chunk) => h.update(chunk));
+    await (await this.d.safeFs()).readChunks(p, facts, (chunk) => { h.update(chunk); onBytes?.(chunk.length); });
     return matches(file, h.digestHex());
   }
 
@@ -715,6 +734,20 @@ export class DownloadEngine {
 
   private emitState(item: QueueItem, f: QueueFile): void {
     this.lastProgress.set(this.key(item, f), { at: this.d.now(), bytes: f.bytes });
+    this.send(item, f, 0);
+  }
+
+  /**
+   * What a long step of `f` is doing, shown beside its state: sent at most once per PROGRESS_MS unless `force`, never
+   * saved for its own sake (the state that follows replaces it).
+   */
+  private note(item: QueueItem, f: QueueFile, text: string, force: boolean): void {
+    const k = this.key(item, f);
+    const now = this.d.now();
+    const last = this.lastProgress.get(k);
+    f.error = text;
+    if (!force && last && now - last.at < PROGRESS_MS) return;
+    this.lastProgress.set(k, { at: now, bytes: f.bytes });
     this.send(item, f, 0);
   }
 

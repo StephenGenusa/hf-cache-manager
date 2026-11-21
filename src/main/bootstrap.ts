@@ -15,8 +15,8 @@ import { configPath } from '../core/compat/config';
 import { readFs } from '../core/fsx';
 import type { ReadFs } from '../core/fsx';
 import { resolveHfHome, resolveHubRoot } from '../core/paths';
-import { DOWNLOAD_DONE_EVENT, DOWNLOAD_PROGRESS_EVENT, EXPORT_PROGRESS_EVENT, SCAN_PROGRESS_EVENT } from '../shared/api';
-import type { DownloadDoneDTO, DownloadProgressDTO, ExportDTO, ScanProgressDTO } from '../shared/api';
+import { DOWNLOAD_DONE_EVENT, DOWNLOAD_PROGRESS_EVENT, EXPORT_PROGRESS_EVENT, SCAN_PROGRESS_EVENT, UPDATE_CHECK_EVENT } from '../shared/api';
+import type { DownloadDoneDTO, DownloadProgressDTO, ExportDTO, ScanProgressDTO, UpdateCheckProgressDTO } from '../shared/api';
 import { undetectedMachine } from './advice-service';
 import { createCorePort } from './core-port';
 import { guardTestEnv, isE2E, preflightTestEnv } from './env-guard';
@@ -83,6 +83,7 @@ export interface ServiceEvents {
   emitDownloadProgress: (e: DownloadProgressDTO) => void;
   emitDownloadDone: (e: DownloadDoneDTO) => void;
   emitExportProgress: (e: ExportDTO) => void;
+  emitUpdateCheck: (p: UpdateCheckProgressDTO) => void;
 }
 
 const errText = (e: unknown): string => (e instanceof Error ? e.message : String(e));
@@ -194,6 +195,8 @@ type ProductionCtx = {
   userDataDir: string; env: NodeJS.ProcessEnv; home: string; platform: NodeJS.Platform; emitProgress: (p: ScanProgressDTO) => void;
   /** The login name (os.userInfo), for the folders Linux mounts drives under. */
   user?: string;
+  /** shell.openExternal; never used under E2E (a test run opens no browser). */
+  openExternal?: (url: string) => Promise<void>;
 } & Partial<Omit<ServiceEvents, 'emitProgress'>>;
 
 /** The production services deps: the real port (no test-only options, ever), the worker scan runner and the real clock. */
@@ -216,7 +219,9 @@ export function productionServicesDeps(ctx: ProductionCtx): ServicesDeps {
     ...(ctx.emitDownloadProgress ? { emitDownloadProgress: ctx.emitDownloadProgress } : {}),
     ...(ctx.emitDownloadDone ? { emitDownloadDone: ctx.emitDownloadDone } : {}),
     ...(ctx.emitExportProgress ? { emitExportProgress: ctx.emitExportProgress } : {}),
+    ...(ctx.emitUpdateCheck ? { emitUpdateCheck: ctx.emitUpdateCheck } : {}),
     ...(ctx.user === undefined ? {} : { user: ctx.user }),
+    ...(ctx.openExternal === undefined || isE2E(ctx.env) ? {} : { openExternal: ctx.openExternal }),
   };
 }
 
@@ -285,6 +290,7 @@ export async function bootstrap(d: BootDeps): Promise<BootResult> {
       emitDownloadProgress: (e) => { live()?.webContents.send(DOWNLOAD_PROGRESS_EVENT, e); },
       emitDownloadDone: (e) => { live()?.webContents.send(DOWNLOAD_DONE_EVENT, e); },
       emitExportProgress: (e) => { live()?.webContents.send(EXPORT_PROGRESS_EVENT, e); },
+      emitUpdateCheck: (e) => { live()?.webContents.send(UPDATE_CHECK_EVENT, e); },
     });
     const trust = (url: string): boolean => isTrustedSender(url, { rendererFile: d.rendererFile, devOrigin: devOriginOf(d.rendererUrl, app.isPackaged) });
     registerIpc(adaptIpcMain(d.ipcMain, (s) => live()?.webContents === s), svc, trust);

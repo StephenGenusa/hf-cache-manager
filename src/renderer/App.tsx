@@ -52,6 +52,8 @@ export function App() {
   const [downloadsOpen, setDownloadsOpen] = useState(false);
   const [exporting, setExporting] = useState<Selection | null>(null);
   const [mode, setMode] = useState<AppMode>('library');
+  /** A repo sent from the library to the Download tab (right-click → Open in Download tab): looked up as the tab opens. */
+  const [downloadLookup, setDownloadLookup] = useState<string | null>(null);
   const library = useLibrary();
   const lastAutoEmptyAt = useRef<number | null>(null);
   const autoEmpty = library.data?.lastAutoEmpty ?? null;
@@ -138,19 +140,26 @@ export function App() {
     if (m === mode) return;
     useSelection.getState().clear();
     useDownloadSelection.getState().clear();
+    setDownloadLookup(null);
     setMode(m);
+  };
+  const openInDownload = (hubInput: string): void => {
+    useSelection.getState().clear();
+    useDownloadSelection.getState().clear();
+    setDownloadLookup(hubInput);
+    setMode('download');
   };
 
   return (
     <div className="flex h-full flex-col bg-background text-foreground">
       <TopBar onSync={() => setSyncOpen(true)} mode={mode} onMode={switchMode} onDownloads={() => setDownloadsOpen((v) => !v)} />
       <StartupNotice onOpenHeld={() => setPane('held')} />
-      {mode === 'download' ? <DownloadMode /> : (
+      {mode === 'download' ? <DownloadMode initialLookup={downloadLookup} /> : (
       <div className="flex min-h-0 flex-1">
         <aside data-testid="left-pane" className="flex w-[270px] shrink-0 flex-col border-r border-border">
           <RepoList
             activeRepoId={pane === 'repo' ? activeRepoId : null} onActivate={(id) => { setActiveRepoId(id); setPane('repo'); }}
-            onOpenHeld={() => setPane('held')} heldActive={pane === 'held'}
+            onOpenHeld={() => setPane('held')} heldActive={pane === 'held'} onOpenInDownload={openInDownload}
           />
           <Button data-testid="nav-settings" className="m-2.5 self-start" variant={pane === 'settings' ? 'tonal' : 'default'} aria-pressed={pane === 'settings'} onClick={() => { setSettingsSection(null); setPane('settings'); }}>
             Settings
@@ -166,6 +175,7 @@ export function App() {
                 key={activeRepoId} repoId={activeRepoId}
                 onDeleteWholeRepo={(repoId) => void open(deleteSource({ repos: [{ repoId, whole: true }] }))}
                 onOpenSettings={() => { setSettingsSection('advice'); setPane('settings'); }}
+                onOpenInDownload={openInDownload}
               />
             )}
         </main>

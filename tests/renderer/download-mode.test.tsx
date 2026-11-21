@@ -275,6 +275,23 @@ test('a non-GATED downloadAdvice failure shows a muted note', async () => {
   expect(await screen.findByTestId('advice-note')).toHaveTextContent('Model shapes could not be read; size advice is unavailable');
 });
 
+test('while shapes are pending, the engine\'s unread-header reason is replaced by the progress note', async () => {
+  let release: () => void = () => undefined;
+  const gate = new Promise<void>((r) => { release = r; });
+  const early = hubAdvice(HUB_LOOKUP, false);
+  const unread = { ...early, groups: early.groups.map((g) => ({ ...g, reason: 'Model shape unknown: header unreadable' })) };
+  await openDownload(makeFakeApi({
+    hubLookup: () => Promise.resolve({ ok: true, data: { ...HUB_LOOKUP, advice: unread } }),
+    downloadAdvice: async () => { await gate; return { ok: true, data: hubAdvice(HUB_LOOKUP, true) }; },
+  }));
+  expect(within(row('quant:UD-Q4_K_XL')).getByText('Reading model shape…')).toBeInTheDocument();
+  expect(screen.queryByText('Model shape unknown: header unreadable')).toBeNull();
+  expect(screen.getByTestId('shapes-pending')).toHaveTextContent('Reading model shapes from the Hub');
+  release();
+  await waitFor(() => expect(screen.queryByTestId('shapes-pending')).toBeNull());
+  expect(screen.queryByText('Reading model shape…')).toBeNull();
+});
+
 test('the best-pick tooltip says "Waiting for model shapes…" while the shapes are pending', async () => {
   const user = await openDownload(makeFakeApi({ downloadAdvice: () => new Promise(() => undefined) }));
   await user.hover(screen.getByTestId('best-pick-wrap'));
@@ -354,4 +371,17 @@ test('a ticked download row is highlighted in the accent blue, never the deletio
   const box = within(r).getByTestId('dl-checkbox');
   expect(box.className).toContain('data-[state=checked]:bg-primary');
   expect(box.className).not.toContain('#e0566a');
+});
+
+test('the looked-up repo name opens its Hugging Face page on a click, and carries the right-click menu', async () => {
+  const openRepoPage = vi.fn(makeFakeApi().openRepoPage);
+  const user = await openDownload(makeFakeApi({ openRepoPage }));
+  const title = screen.getByTestId('lookup-title');
+  expect(title).toHaveAccessibleName('Open unsloth/Qwen3.6-27B-GGUF on Hugging Face');
+  expect(title).toHaveTextContent('unsloth/Qwen3.6-27B-GGUF');
+  await user.click(title);
+  expect(openRepoPage).toHaveBeenCalledExactlyOnceWith('unsloth/Qwen3.6-27B-GGUF', 'model');
+  await user.pointer({ keys: '[MouseRight]', target: title });
+  await user.click(await screen.findByRole('menuitem', { name: 'Open on Hugging Face' }));
+  expect(openRepoPage).toHaveBeenCalledTimes(2);
 });

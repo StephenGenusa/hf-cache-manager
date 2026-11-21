@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactElement } from 'react';
 import { ApiProvider } from '../../src/renderer/lib/api';
 import type {
-  ApiResult, DownloadGroupDTO, GroupAdviceDTO, GroupDTO, HfcmApi, HubLookupDTO, LibraryDTO, MachineProfileDTO, PlanDTO, PlanPairDTO, NamePartDTO, RepoAdviceDTO, RepoDetailDTO, RepoSummaryDTO,
+  ApiResult, DownloadGroupDTO, GroupAdviceDTO, GroupDTO, HfcmApi, HubLookupDTO, LibraryDTO, MachineProfileDTO, PlanDTO, PlanPairDTO, NamePartDTO, RepoAdviceDTO, RepoDetailDTO, RepoSummaryDTO, UpdateCheckDTO,
 } from '../../src/shared/api';
 
 import { KNOWLEDGE } from '../../src/shared/knowledge';
@@ -103,6 +103,9 @@ export const hubAdvice = (l: HubLookupDTO, withSizes: boolean): RepoAdviceDTO =>
     labelParts: parts(g.label), files: g.files.map((f) => ({ relpath: f.path, parts: parts(f.path) })),
   })),
 });
+export const NO_UPDATE_CHECK: UpdateCheckDTO = {
+  progress: { running: false, done: 0, total: 0, current: null, waitingUntil: null }, checkedAt: null, disabledReason: null, error: null, results: [],
+};
 const DETAILS: RepoDetailDTO[] = [QWEN_DETAIL, FLUX_DETAIL];
 
 /** Advice for a fixture repo: name parts from the real splitter, no tint or reason (adds those). */
@@ -179,6 +182,13 @@ export function makeFakeApi(over: Partial<HfcmApi> = {}): HfcmApi {
     exportStart: () => Promise.resolve(ok({ id: 'ex1' })),
     exportCancel: () => Promise.resolve(ok(null)),
     exports: () => Promise.resolve(ok([])),
+    openRepoPage: () => Promise.resolve(ok(null)),
+    // Check for updates: never run, nothing found, unless a test supplies a state
+    updateCheck: () => Promise.resolve(ok(NO_UPDATE_CHECK)),
+    updateCheckStart: () => Promise.resolve(ok(null)),
+    updateCheckCancel: () => Promise.resolve(ok(null)),
+    updateCheckRepo: (repoId, type) => Promise.resolve(ok({ repoId, type, status: 'current', commit: null, files: [], message: null, checkedAt: 1_000 })),
+    onUpdateCheckProgress: () => () => undefined,
     onExportProgress: () => () => undefined,
     ...over,
   };

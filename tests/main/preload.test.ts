@@ -26,7 +26,7 @@ async function exposed(): Promise<HfcmApi> {
 
 test('exposes exactly the api methods and forwards to channels', async () => {
   const api = await exposed();
-  expect(Object.keys(api).sort()).toEqual([...API_METHODS, 'onScanProgress', 'onDownloadProgress', 'onDownloadDone', 'onExportProgress'].sort());
+  expect(Object.keys(api).sort()).toEqual([...API_METHODS, 'onScanProgress', 'onDownloadProgress', 'onDownloadDone', 'onExportProgress', 'onUpdateCheckProgress'].sort());
   expect(Object.values(api).every((v) => typeof v === 'function')).toBe(true);
   vi.mocked(ipcRenderer.invoke).mockResolvedValue({ ok: true, data: null });
   await api.executePlan('id', 'fp', 'hold', null);
@@ -148,4 +148,26 @@ test('exposes the transfer methods on their channels', async () => {
   expect(ipcRenderer.invoke).toHaveBeenLastCalledWith('hfcm:exportCancel', id);
   await api.exports();
   expect(ipcRenderer.invoke).toHaveBeenLastCalledWith('hfcm:exports');
+  for (const m of ['updateCheck', 'updateCheckStart', 'updateCheckCancel'] as const) {
+    await api[m]();
+    expect(ipcRenderer.invoke).toHaveBeenLastCalledWith(`hfcm:${m}`);
+  }
+  await api.updateCheckRepo('org/name', 'model');
+  expect(ipcRenderer.invoke).toHaveBeenLastCalledWith('hfcm:updateCheckRepo', 'org/name', 'model');
+  await api.openRepoPage('org/name', 'dataset');
+  expect(ipcRenderer.invoke).toHaveBeenLastCalledWith('hfcm:openRepoPage', 'org/name', 'dataset');
+});
+
+test('onUpdateCheckProgress passes only the payload on its own channel and unsubscribes', async () => {
+  const api = await exposed();
+  vi.mocked(ipcRenderer.on).mockClear();
+  const cb = vi.fn();
+  const off = api.onUpdateCheckProgress(cb);
+  const [ch, listener] = vi.mocked(ipcRenderer.on).mock.calls[0] ?? [];
+  expect(ch).toBe('hfcm:update-check');
+  const p = { running: true, done: 1, total: 3, current: 'o/n', waitingUntil: null };
+  (listener as (e: unknown, x: unknown) => void)({ sender: 'secret' }, p);
+  expect(cb).toHaveBeenCalledExactlyOnceWith(p);
+  off();
+  expect(ipcRenderer.removeListener).toHaveBeenCalledWith('hfcm:update-check', listener);
 });

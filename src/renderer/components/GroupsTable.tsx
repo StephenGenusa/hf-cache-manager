@@ -54,9 +54,11 @@ export interface GroupsTableProps {
   repo: RepoDetailDTO;
   /** True when nothing may be selected for this repo (ambiguous id, unreadable cache, ...). */
   blocked: boolean;
+  /** Paths of files the Hub has a newer version of (from a check of this repo); their groups and rows are marked. */
+  outdated?: ReadonlySet<string>;
 }
 
-export function GroupsTable({ repo, blocked }: GroupsTableProps) {
+export function GroupsTable({ repo, blocked, outdated }: GroupsTableProps) {
   const advice = useAdvice(repo.repoId).data;
   const sel = useSelection((s) => s.byRepo[repo.repoId]);
   const toggleGroup = useSelection((s) => s.toggleGroup);
@@ -155,6 +157,9 @@ export function GroupsTable({ repo, blocked }: GroupsTableProps) {
                         <span>{adv !== undefined ? <NameParts parts={adv.labelParts} /> : g.label}</span>
                         {partial && g.shards !== null && <Badge tone="warning">{`partial (${g.shards.present}/${g.shards.expected})`}</Badge>}
                         {g.kind === 'mmproj' && <Badge>vision</Badge>}
+                        {outdated !== undefined && g.files.some((f) => outdated.has(f.relpath)) && (
+                          <Badge data-testid="group-update" tone="warning" title="The Hub has a newer version of files in this group">update</Badge>
+                        )}
                       </div>
                       {g.warning !== null && (
                         <p data-testid="group-warning" className="mt-1 flex items-start gap-1 text-xs text-warning">
@@ -180,6 +185,7 @@ export function GroupsTable({ repo, blocked }: GroupsTableProps) {
                               <span className="min-w-0 flex-1 truncate font-mono text-foreground">{fileParts(adv, f.relpath)}</span>
                               <span className="font-mono text-muted-foreground">{f.commitShort}</span>
                               {!f.current && <Badge tone="warning">older revision</Badge>}
+                              {outdated?.has(f.relpath) === true && <Badge tone="warning">newer on the Hub</Badge>}
                               <span className="w-20 text-right tabular-nums text-muted-foreground">{formatBytes(f.bytes)}</span>
                             </li>
                           ))}

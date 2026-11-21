@@ -53,6 +53,8 @@ human terms, and turns "delete the biggest folder and hope" into a reviewed, rev
 - **A readable library.** Every cached model, dataset and space by name, with its real on-disk size, its kind (GGUF
   quants, a diffusers pipeline, transformers weights, a single file) and whether LM Studio or Ollama uses it. Search,
   sort and filter by kind, by tool, or by repos with unfinished downloads.
+- **Check for updates.** One click asks the Hub which cached repos have a newer version of a file you already hold;
+  the result is kept, so you can work through the list and refresh what you want.
 - **Contents in human terms.** A GGUF repo shows its quants, vision projectors and draft models; a pipeline shows its
   components (`transformer/`, `vae/`, `text_encoder/`); sharded weights are one group, not twenty files. No hashes in
   the main view.
@@ -76,11 +78,13 @@ human terms, and turns "delete the biggest folder and hope" into a reviewed, rev
 - **Move models on a USB drive.** Export models from the library to a drive, then load them into the cache of another
   computer. It works between Linux, Windows and macOS, and on a drive with any file system both computers can read.
 - **Plays well with others.** The cache stays a standard `huggingface_hub` cache. The app reads and writes the same
-  `config.toml` and sync state as the `hf-xfer` CLI from [hf-hub-utilities](https://github.com/StephenGenusa/hf-hub-utilities), so either can be used at any time.
+  `config.toml` and sync state as the `hf-xfer` CLI from
+  [hf-hub-utilities](https://github.com/StephenGenusa/hf-hub-utilities), so either can be used at any time.
 
 ## Install
 
-Download the file for your system from the [latest release](https://github.com/StephenGenusa/hf-cache-manager/releases/latest).
+Download the file for your system from the
+[latest release](https://github.com/StephenGenusa/hf-cache-manager/releases/latest).
 
 | System | File | Notes |
 | --- | --- | --- |
@@ -97,14 +101,25 @@ Each release lists the SHA-256 of every file.
 
 The app finds the cache the same way `huggingface_hub` does (see [Configuration](#configuration)) and lists every
 repo on the left with its size and kind. The header shows the cache's size against the whole disk. Select a repo to
-see its contents grouped on the right; expand a group to see its files.
+see its contents grouped on the right; expand a group to see its files. Click the repo's name above its contents to
+open its page on Hugging Face. Right-click a repo in the list for **Open on Hugging Face** and **Open in Download
+tab**, which looks the repo up in download mode.
 
 The advice line above the table names the machine it was judged for: GPU, RAM, context length and the tools you run.
 Change any of them under **Settings → Advice** if detection got something wrong or you plan for a different setup.
 
+**Check for updates** (under the filter chips) compares every cached repo with its `main` revision on the Hub. A repo
+gets an **update** badge when the Hub has a newer version of a file you already have; files you never downloaded and
+new quants do not count. The **Updates** chip keeps only those repos; right-click one and choose **Open in Download
+tab** to refresh it. The findings are saved and survive a restart, and a repo's badge clears once its files are
+refreshed. Opening a repo that has the badge checks that one repo again and marks the groups and files with a newer
+version. The full check runs only when you start it, uses your Hugging Face token for gated and private repos, waits
+when the Hub rate-limits, and can be cancelled. Repos pinned to a commit (no `main` in the cache) are not checked.
+
 ### Deleting safely
 
-Tick the groups to remove, or use **Delete entire repo…**, then **Review deletion…**.
+Tick the groups to remove (**Select All** ticks every group in the repo), or use **Delete entire repo…**, then
+**Review deletion…**.
 
 ![The deletion review: three files removed, 52 GB actually freed, and the four files kept in the repo](docs/screenshots/review.png)
 
@@ -139,8 +154,12 @@ press Enter.
   and the list updates as downloads finish.
 - The footer checks free space before you start, keeping a 5 GB margin.
 - The **Downloads** panel shows progress, speed and time left, with Pause, Resume and Cancel (Clear removes a finished
-  download from the list). Unfinished downloads
-  come back paused after a restart, and a repo with a download in progress cannot be deleted.
+  download from the list). Unfinished downloads come back paused after a restart, and a repo with a download in
+  progress cannot be deleted.
+- Files of the new revision that are already in the cache are checked against their hash before they are linked. For
+  large files this can take a while, and the file's line in the panel shows how much has been checked.
+- Click the looked-up repo's name to open its page on Hugging Face. The looked-up repo and the recent look-ups also
+  have the right-click **Open on Hugging Face**.
 
 Gated repos need a Hugging Face token: set `HF_TOKEN`, or log in once with `hf auth login` so the token is in
 `~/.cache/huggingface/token`. The token is only ever sent to the Hub.
@@ -148,8 +167,9 @@ Gated repos need a Hugging Face token: set `HF_TOKEN`, or log in once with `hf a
 ### Sync with LM Studio and Ollama
 
 If you keep LM Studio or Ollama pointed at your Hugging Face models through symlink views (the layout `hf-xfer sync`
-from [hf-hub-utilities](https://github.com/StephenGenusa/hf-hub-utilities) builds), **Sync LM Studio + Ollama** shows exactly which links it will add and remove, then applies them. It only
-removes links it created itself; anything you put in those folders by hand is left alone.
+from [hf-hub-utilities](https://github.com/StephenGenusa/hf-hub-utilities) builds), **Sync LM Studio + Ollama** shows
+exactly which links it will add and remove, then applies them. It only removes links it created itself; anything you
+put in those folders by hand is left alone.
 
 ### Moving models between computers
 
@@ -230,16 +250,18 @@ run (llama.cpp, LM Studio, Ollama, vLLM, TabbyAPI, transformers).
 
 ## Privacy and network use
 
-There is no account, no telemetry and no update check. The app goes online only:
+There is no account and no telemetry. The app goes online only:
 
 - in download mode, to the Hugging Face Hub, to look up the repo you enter, read GGUF headers for advice, and download
   the files you choose;
+- when you click **Check for updates**, to the Hugging Face Hub, once per cached repo, for the file list of its `main`
+  revision (no file is downloaded); opening a repo that has an **update** badge asks the same for that one repo;
 - during Sync, to Hugging Face's Ollama registry endpoint, for the manifest of a model Ollama will link to.
 
 Export to drive and Load from USB never go online; they read and write only the cache and the drive.
 
-GPU detection runs `nvidia-smi` locally when it is installed. Settings and the download queue are kept in the app's
-own settings folder; nothing leaves the machine.
+GPU detection runs `nvidia-smi` locally when it is installed. Settings, the download queue and what the last update
+check found are kept in the app's own settings folder; nothing leaves the machine.
 
 ## Known limitations
 

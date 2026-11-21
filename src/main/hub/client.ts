@@ -13,8 +13,10 @@ export interface HubRevision {
 }
 /** RANGE_IGNORED: the server answered a request from past byte 0 with the whole file (status 200); it cannot resume. */
 export type HubError = {
-  code: 'NOT_FOUND' | 'GATED' | 'UNAUTHORIZED' | 'NETWORK' | 'SERVER' | 'OFFLINE' | 'BAD_RESPONSE' | 'RANGE_IGNORED' | 'NETWORK_BLOCKED';
+  code: 'NOT_FOUND' | 'GATED' | 'UNAUTHORIZED' | 'NETWORK' | 'SERVER' | 'OFFLINE' | 'BAD_RESPONSE' | 'RANGE_IGNORED' | 'NETWORK_BLOCKED' | 'RATE_LIMITED';
   message: string;
+  /** RATE_LIMITED only: the wait the Hub asked for (Retry-After in seconds), null when it gave none. */
+  retryAfterMs?: number | null;
 };
 
 export class HubClientError extends Error {
@@ -26,7 +28,8 @@ export class HubClientError extends Error {
 }
 
 export interface HubClient {
-  revision(repoId: string, type: HubRepoType, revision: string): Promise<HubRevision>;
+  /** `signal`: aborting it stops the request and rejects with the signal's reason (a check that is cancelled). */
+  revision(repoId: string, type: HubRepoType, revision: string, signal?: AbortSignal): Promise<HubRevision>;
   /**
    * `size` is the whole file's size (Content-Range total on 206, Content-Length on 200), null when not given.
    * A 200 to a range request (fromByte > 0) is refused as RANGE_IGNORED ("The server cannot resume this file").
@@ -125,7 +128,13 @@ function statusError(res: Response): HubClientError {
     return new HubClientError({ code: 'UNAUTHORIZED', message: `The Hub refused access (HTTP ${res.status}); check your token` });
   }
   if (res.status >= 500) return new HubClientError({ code: 'SERVER', message: `The Hub had an error (HTTP ${res.status})` });
-  if (res.status === 429) return bad('The Hub is rate-limiting requests (HTTP 429); try again later');
+  if (res.status === 429) {
+    const after = res.headers.get('retry-after') ?? '';
+    return new HubClientError({
+      code: 'RATE_LIMITED', message: 'The Hub is rate-limiting requests (HTTP 429); try again later',
+      retryAfterMs: /^\d{1,6}$/.test(after) ? Number(after) * 1000 : null,
+    });
+  }
   return bad(`Unexpected HTTP ${res.status} from the Hub`);
 }
 
@@ -257,10 +266,10 @@ export function createHubClient(d: HubClientDeps): HubClient {
     }
   }
 
-  async function revision(repoId: string, type: HubRepoType, rev: string): Promise<HubRevision> {
+  async function revision(repoId: string, type: HubRepoType, rev: string, outer?: AbortSignal): Promise<HubRevision> {
     if (!safeRef(rev) && !isCommitHash(rev)) throw new TypeError(`Invalid revision: '${rev}'`);
     const url = `${ep.base}/api/${API_KIND[type]}/${repoPath(repoId)}/revision/${encodeRevision(rev)}?blobs=true`;
-    const signal = new AbortController().signal;
+    const signal = outer ?? new AbortController().signal;
     const { res, ctl } = await request(url, { Accept: 'application/json' }, signal);
     if (res.status !== 200) {
       await discard(res);

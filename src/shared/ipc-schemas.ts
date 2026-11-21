@@ -117,6 +117,11 @@ export const ARG_SCHEMAS = {
   exportStart: z.tuple([PREVIEW_ID]),
   exportCancel: z.tuple([EXPORT_ID]),
   exports: NONE,
+  openRepoPage: z.tuple([REPO_ID, z.enum(['model', 'dataset', 'space'])]),
+  updateCheck: NONE,
+  updateCheckStart: NONE,
+  updateCheckCancel: NONE,
+  updateCheckRepo: z.tuple([REPO_ID, z.enum(['model', 'dataset', 'space'])]),
 } as const satisfies Record<InvokeMethod, z.ZodType>;
 
 export function parseArgs<M extends InvokeMethod>(

@@ -32,6 +32,9 @@ export interface FakeHubOptions {
   failFirst?: Record<string, number>;
   /** File paths whose CDN bytes differ from the content the API's hashes describe (first byte flipped). */
   corrupt?: string[];
+  /** The first N requests answer 429 with `Retry-After: <rateLimitAfterSec>`: keyed like `failFirst`. */
+  rateLimitFirst?: Record<string, number>;
+  rateLimitAfterSec?: number;
   /** CDN throttle for every file body. */
   slowBytesPerSec?: number;
 }
@@ -92,6 +95,13 @@ export async function startFakeHub(repos: FakeHubRepo[], opts: FakeHubOptions = 
   const failures = new Map(Object.entries(opts.failFirst ?? {}));
   const find = (type: HubRepoType, ns: string | undefined, name: string | undefined): FakeHubRepo | undefined =>
     repos.find((r) => typeOf(r) === type && r.repoId === `${ns}/${name}`);
+  const limits = new Map(Object.entries(opts.rateLimitFirst ?? {}));
+  const limited = (key: string): boolean => {
+    const left = limits.get(key) ?? 0;
+    if (left <= 0) return false;
+    limits.set(key, left - 1);
+    return true;
+  };
   const failing = (key: string): boolean => {
     const left = failures.get(key) ?? 0;
     if (left <= 0) return false;
@@ -120,6 +130,10 @@ export async function startFakeHub(repos: FakeHubRepo[], opts: FakeHubOptions = 
       const repo = find(type, segs[2], segs[3]);
       if (!repo) return fail(res, 404, 'RepositoryNotFound');
       if (failing(`revision:${repo.repoId}`)) return fail(res, 503);
+      if (limited(`revision:${repo.repoId}`)) {
+        res.writeHead(429, opts.rateLimitAfterSec === undefined ? {} : { 'Retry-After': String(opts.rateLimitAfterSec) });
+        return void res.end();
+      }
       const rev = segs.slice(5).join('/');
       if (rev !== 'main' && rev !== repo.commit) return fail(res, 404, 'RevisionNotFound');
       const lfs = new Set(repo.lfs ?? []);

@@ -25,7 +25,7 @@ import type {
   ApiError, ApiErrorCode, ApiResult, AutoEmptyPendingNoticeDTO, MachineProfileDTO, RepoAdviceDTO, AutoEmptySkippedNoticeDTO, DiskInfoDTO, EmptyPlanDTO, EmptyTarget, ExecResultDTO, HeldListDTO, LibraryDTO, PlanDTO,
   PlanPairDTO, RepoDetailDTO, ScanProgressDTO, SelectionPreviewDTO, SettingsDTO, SettingsViewDTO, JournalNoticeDTO, StartupNoticeDTO,
   SyncPlanDTO, SyncResultDTO, DownloadDoneDTO, DownloadGroupDTO, DownloadPreviewDTO, DownloadProgressDTO, DownloadsDTO, HubLookupDTO, RecentLookupDTO,
-  ExportDTO, ExportPreviewDTO, TransferDriveDTO, TransferVolumeDTO,
+  ExportDTO, ExportPreviewDTO, TransferDriveDTO, TransferVolumeDTO, UpdateCheckDTO, UpdateCheckProgressDTO, UpdateRepoDTO,
 } from '../shared/api';
 import { formatBytes } from '../shared/format';
 import { profileDto, repoAdvice, undetectedMachine, type ShapeCache } from './advice-service';
@@ -34,7 +34,8 @@ import type { ConfigResult, CorePort, HubResolution, PortRoots } from './core-po
 import {
   displayPath, toEmptyPlanDTO, toExecResultDTO, toHeldDeletionDTO, toPlanDTO, toRepoDetail, toRepoSummary, toSyncPlanDTO, toSyncResultDTO, type DtoContext,
 } from './dto';
-import { DownloadService, repoLabel, type DownloadOptions } from './download-service';
+import { DownloadService, downloadMode, repoLabel, type DownloadOptions } from './download-service';
+import { UpdateService, type UpdateOptions } from './update-service';
 import { parseRepoFolder } from '../core/scan/scanner';
 import type { ScanRunner } from './scan-client';
 import { EXPORT_ACTIVE_TEXT, TransferService } from './transfer-service';
@@ -67,6 +68,10 @@ export interface ServicesDeps {
   /** Download progress events and the per-download "done" event (after its rescan), to the window. */
   emitDownloadProgress?: (e: DownloadProgressDTO) => void;
   emitDownloadDone?: (e: DownloadDoneDTO) => void;
+  /** "Check for updates" progress events, to the window. */
+  emitUpdateCheck?: (p: UpdateCheckProgressDTO) => void;
+  /** Update-check test seams (the rate-limit wait, the repos asked at once). */
+  updates?: UpdateOptions;
   /** Export progress events, to the window. */
   emitExportProgress?: (e: ExportDTO) => void;
   /** The login name, for the folders Linux mounts drives under (default: none, so only /media and /mnt are searched). */
@@ -75,6 +80,8 @@ export interface ServicesDeps {
   transfer?: { partSize?: number; probeTimeoutMs?: number };
   /** Test seams (fetch, statfs, sleeps). Production passes none: the hub client then uses `hubFetch`. */
   download?: DownloadOptions;
+  /** Opens an https URL in the default browser (electron's shell.openExternal). Absent (tests, E2E): nothing is opened. */
+  openExternal?: (url: string) => Promise<void>;
   /** The disk meter's statfs; absent: the real one. Set only by a guarded E2E run (bootstrap e2eDisk). */
   statfs?: (p: string) => Promise<{ bsize: number; blocks: number; bfree: number; bavail: number }>;
 }
@@ -166,6 +173,10 @@ export const AUTO_EMPTY_CLOCK_TEXT = (why: string): string =>
 const VIEWS: readonly ViewName[] = ['lmstudio', 'ollama'];
 
 const errText = (e: unknown): string => (e instanceof Error ? e.message : String(e));
+/** `https://huggingface.co/<id>` for a model; datasets and spaces carry their prefix. */
+export const repoPageUrl = (type: Repo['type'], repoId: string): string =>
+  `https://huggingface.co/${type === 'model' ? '' : `${type}s/`}${repoId.split('/').map(encodeURIComponent).join('/')}`;
+
 const fail = (code: ApiErrorCode, message: string): { ok: false; error: ApiError } => ({ ok: false, error: { code, message } });
 const ok = <T>(data: T): ApiResult<T> => ({ ok: true, data });
 
@@ -253,6 +264,7 @@ export class AppServices {
   private readonly dl: DownloadService;
   /** Transfer drives: the volume list, loads (through `dl`) and exports. Exports run outside `op`, like downloads. */
   private readonly transfer: TransferService;
+  private readonly updates: UpdateService;
 
   constructor(private readonly d: ServicesDeps) {
     this.fs = d.fs ?? readFs;
@@ -273,6 +285,13 @@ export class AppServices {
       emitProgress: (e) => this.d.emitDownloadProgress?.(e),
       emitDone: (e) => this.d.emitDownloadDone?.(e),
     }, d.download);
+    this.updates = new UpdateService({
+      now: d.now, settings: this.settingsStore,
+      model: () => this.scannedModel(),
+      client: () => this.dl.checkClient(),
+      disabledReason: () => { const mode = downloadMode(d.env); return mode.ok ? null : mode.reason; },
+      emit: (p) => this.d.emitUpdateCheck?.(p),
+    }, d.updates);
     this.transfer = new TransferService({
       env: d.env, platform: d.platform, user: d.user ?? '', now: d.now, fs: this.fs, dl: this.dl,
       model: () => this.scannedModel(),
@@ -423,6 +442,16 @@ export class AppServices {
       if (!found.ok) return found;
       const { s, repo, view } = found.data;
       return ok(toRepoDetail(s.model, repo, view, s.usage, this.d.now()));
+    });
+  }
+
+  /** The repo's page on the Hub (cached or not: the Download tab lists repos that are not). The URL is built here from a
+   *  validated id and type, so it is always an https://huggingface.co page. */
+  openRepoPage(repoId: string, type: Repo['type']): Promise<ApiResult<null>> {
+    return this.safe(async () => {
+      if (this.d.openExternal === undefined) return fail('INTERNAL', 'Opening the browser is not available here.');
+      await this.d.openExternal(repoPageUrl(type, repoId));
+      return ok(null);
     });
   }
 
@@ -1307,6 +1336,27 @@ export class AppServices {
   }
 
   // ------------------------------------------------------------------ transfer drives
+
+  updateCheck(): Promise<ApiResult<UpdateCheckDTO>> {
+    return this.safe(() => this.updates.status());
+  }
+
+  updateCheckStart(): Promise<ApiResult<null>> {
+    return this.safe(() => this.updates.start());
+  }
+
+  updateCheckCancel(): Promise<ApiResult<null>> {
+    return this.safe(() => this.updates.cancel());
+  }
+
+  updateCheckRepo(repoId: string, type: Repo['type']): Promise<ApiResult<UpdateRepoDTO>> {
+    return this.safe(() => this.updates.checkRepo(repoId, type));
+  }
+
+  /** Resolves when no update check is running (tests). */
+  updateCheckIdle(): Promise<void> {
+    return this.updates.idle();
+  }
 
   transferVolumes(): Promise<ApiResult<TransferVolumeDTO[]>> {
     return this.safe(() => this.transfer.transferVolumes());

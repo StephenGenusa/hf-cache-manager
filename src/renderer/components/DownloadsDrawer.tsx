@@ -35,6 +35,7 @@ function FileLine({ repoId, f }: { repoId: string; f: ShownFile }) {
         {' · '}<span data-testid="download-state" className={f.state === 'failed' ? 'text-danger' : undefined}>{STATE_TEXT[f.state]}</span>
       </div>
       {f.state === 'failed' && f.error !== null && <div data-testid="download-error" className="break-all text-danger">{f.error}</div>}
+      {f.state === 'verifying' && f.error !== null && <div data-testid="download-progress-note" className="text-muted-foreground">{f.error}</div>}
       {f.state === 'done' && f.error !== null && <div data-testid="download-note" className="break-all text-muted-foreground">{f.error}</div>}
     </li>
   );

@@ -1,6 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import { ChevronDown, ChevronRight, Loader2 } from 'lucide-react';
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
+import { SHAPE_UNREAD_REASON } from '../../shared/format';
 import type { ApiResult, DownloadGroupDTO, GroupAdviceDTO, HubLookupDTO, RepoAdviceDTO } from '../../shared/api';
 import { useApi } from '../lib/api';
 import { formatBytes } from '../lib/format';
@@ -13,6 +14,7 @@ import { DownloadFooter } from './DownloadFooter';
 import { HubInput } from './HubInput';
 import { LoadFromDrive } from './LoadFromDrive';
 import { NameParts } from './NameParts';
+import { RepoMenu, useOpenRepoPage } from './RepoMenu';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Checkbox } from './ui/checkbox';
@@ -22,6 +24,9 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/t
 export const NO_BEST_PICK = 'No best pick for this PC';
 export const SHAPES_UNREAD = 'Model shapes could not be read; size advice is unavailable';
 const SHAPE_PENDING = 'Reading model shape…';
+export const SHAPES_PENDING_NOTE = 'Reading model shapes from the Hub; size advice appears when they are in.';
+/** No size verdict yet: nothing said, or the engine's answer for a header nobody has read. */
+const awaitsShape = (adv: GroupAdviceDTO | undefined): boolean => adv === undefined || adv.reason === '' || adv.reason === SHAPE_UNREAD_REASON;
 
 /** "12.3 / 19.6 GB": the unit is written once when both sides share it. */
 const ofTotal = (have: number, size: number): string => {
@@ -53,15 +58,17 @@ const needsShape = (g: Pick<DownloadGroupDTO, 'kind'>): boolean => g.kind === 'q
 
 const errorMessage = (e: unknown): string => (e instanceof Error ? e.message : String(e));
 
-export function DownloadMode() {
+/** `initialLookup`: Hub text to look up as the tab opens (a repo sent over from the library). */
+export function DownloadMode({ initialLookup = null }: { initialLookup?: string | null } = {}) {
   const api = useApi();
+  const openPage = useOpenRepoPage();
   const client = useQueryClient();
   const recent = useRecentLookups().data ?? [];
   const keys = useDownloadSelection((s) => s.keys);
   const toggle = useDownloadSelection((s) => s.toggle);
   const setKeys = useDownloadSelection((s) => s.set);
   const clearKeys = useDownloadSelection((s) => s.clear);
-  const [input, setInput] = useState('');
+  const [input, setInput] = useState(initialLookup ?? '');
   const [busy, setBusy] = useState(false);
   const [lookup, setLookup] = useState<HubLookupDTO | null>(null);
   const [lookupError, setLookupError] = useState<string | null>(null);
@@ -138,6 +145,13 @@ export function DownloadMode() {
     return runLookup('hub', () => api.hubLookup(text));
   };
 
+  // Once, as the tab opens: a remount is a new tab visit, and a later look-up supersedes this one (token).
+  const first = useRef(initialLookup);
+  const lookUp = useRef(doLookup);
+  useEffect(() => {
+    if (first.current !== null) void lookUp.current(first.current);
+  }, []);
+
   const adviceOf = (key: string): GroupAdviceDTO | undefined => advice?.groups.find((a) => a.key === key);
   const items = useDownloads((s) => s.items);
   const live = useDownloads((s) => s.live);
@@ -160,6 +174,7 @@ export function DownloadMode() {
           </Button>
           <div className="min-h-0 flex-1 overflow-y-auto">
             {lookup !== null && (
+              <RepoMenu repoId={lookup.repoId} type={lookup.type}>
               <div data-testid="lookup-repo" className="border-b border-border/60 bg-accent px-3 py-2">
                 <div className="truncate text-[13px] text-foreground">{lookup.repoId}</div>
                 <div className="mt-0.5 flex flex-wrap items-center gap-1">
@@ -172,6 +187,7 @@ export function DownloadMode() {
                   <div data-testid="lookup-date" className="mt-0.5 text-[11px] text-muted-foreground">Updated {lookup.lastModified.slice(0, 10)}</div>
                 )}
               </div>
+              </RepoMenu>
             )}
             {driveOpen && (
               <LoadFromDrive
@@ -183,13 +199,15 @@ export function DownloadMode() {
             {!driveOpen && <h3 className="px-3 pt-3 pb-1 text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">Recent look-ups</h3>}
             {!driveOpen && recent.length === 0 && <p className="px-3 text-xs text-muted-foreground">Nothing looked up yet.</p>}
             {!driveOpen && recent.map((r) => (
+              <RepoMenu key={`${r.at}:${r.input}`} repoId={r.repoId} type={r.type}>
               <button
-                key={`${r.at}:${r.input}`} type="button" data-testid="recent-lookup"
+                type="button" data-testid="recent-lookup"
                 onClick={() => { setInput(r.input); void doLookup(r.input); }}
                 className="block w-full cursor-pointer truncate border-b border-border/60 px-3 py-2 text-left text-[13px] text-foreground hover:bg-accent/50"
               >
                 {r.repoId}{r.revision !== 'main' && <span className="text-muted-foreground">{` @${r.revision}`}</span>}
               </button>
+              </RepoMenu>
             ))}
           </div>
         </aside>
@@ -201,7 +219,16 @@ export function DownloadMode() {
           {lookup !== null && (
             <TooltipProvider>
               <div className="mb-2 flex flex-wrap items-center gap-2">
-                <h2 className="text-base font-semibold">{advice !== null && advice.repoParts.length > 0 ? <NameParts parts={advice.repoParts} /> : lookup.repoId}</h2>
+                <h2 className="flex min-w-0 text-base font-semibold">
+                  <RepoMenu repoId={lookup.repoId} type={lookup.type}>
+                    <button
+                      type="button" data-testid="lookup-title" aria-label={`Open ${lookup.repoId} on Hugging Face`} onClick={() => openPage(lookup.repoId, lookup.type)}
+                      className="min-w-0 cursor-pointer truncate text-left hover:underline"
+                    >
+                      {advice !== null && advice.repoParts.length > 0 ? <NameParts parts={advice.repoParts} /> : lookup.repoId}
+                    </button>
+                  </RepoMenu>
+                </h2>
                 <span className="font-mono text-xs text-muted-foreground">{`${lookup.revision} · ${lookup.commit.slice(0, 7)}`}</span>
                 <span className="ml-auto flex items-center gap-2">
                   <Button disabled={wholeRepo.length === 0 || busy} onClick={() => setKeys(wholeRepo)}>Select whole repo</Button>
@@ -218,6 +245,11 @@ export function DownloadMode() {
               {gatedNote !== null && <p role="alert" data-testid="gated-note" className="mb-2 text-sm text-warning">{gatedNote}</p>}
               {!lookup.downloadable && lookup.notDownloadableReason !== null && (
                 <p data-testid="not-downloadable" className="mb-2 text-sm text-warning">{lookup.notDownloadableReason}</p>
+              )}
+              {pending && (
+                <p role="status" data-testid="shapes-pending" className="mb-2 flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <Loader2 aria-hidden className="h-3.5 w-3.5 animate-spin" />{SHAPES_PENDING_NOTE}
+                </p>
               )}
               {adviceNote !== null && <p data-testid="advice-note" className="mb-2 text-xs text-muted-foreground">{adviceNote}</p>}
               {advice !== null && <AdviceBasis basis={advice.basis} />}
@@ -261,8 +293,8 @@ export function DownloadMode() {
                             {!g.selectable && g.reason !== null && <p data-testid="dl-reason" className="mt-1 text-xs text-warning">{g.reason}</p>}
                           </TableCell>
                           <TableCell>
-                            {pending && needsShape(g) && (adv === undefined || adv.reason === '')
-                              ? <span className="text-xs text-muted-foreground">{SHAPE_PENDING}</span>
+                            {pending && needsShape(g) && awaitsShape(adv)
+                              ? <span className="inline-flex items-center gap-1 text-xs text-muted-foreground"><Loader2 aria-hidden className="h-3 w-3 animate-spin" />{SHAPE_PENDING}</span>
                               : <AdviceCell advice={adv} />}
                           </TableCell>
                           <TableCell className="text-muted-foreground">{`${g.files.length} ${g.files.length === 1 ? 'file' : 'files'}`}</TableCell>

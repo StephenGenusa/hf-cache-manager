@@ -1,6 +1,6 @@
 // The keep-advice engine. Pure: takes file facts, never paths on disk, so download mode
 // can run it on files that are not downloaded yet. Advice only colours rows; nothing here selects or deletes.
-import { formatBytes } from '../../shared/format';
+import { formatBytes, SHAPE_UNREAD_REASON } from '../../shared/format';
 import { nameParts } from '../../shared/knowledge/name-parts';
 import {
   CANNOT_LOAD, DRAFTERS, MMPROJ_ORDER, QAT_TOKENS, SLOW_ON_NVIDIA, formatSupport, ggufTypeSupport,
@@ -171,7 +171,7 @@ function sizeStep(g: AdviceGroupInput, c: Ctx, label: Label, note: string, cavea
   if (g.shards !== null && g.shards.present < g.shards.expected) {
     return { done: advice(g.key, null, `Incomplete: ${g.shards.present} of ${g.shards.expected} parts present`) };
   }
-  if (g.shape === null) return { done: advice(g.key, null, 'Model shape unknown: header unreadable') };
+  if (g.shape === null) return { done: advice(g.key, null, SHAPE_UNREAD_REASON) };
   if (!(g.shape.paramCount > 0)) return { done: advice(g.key, null, 'Parameter count unknown: header has no tensor sizes') };
 
   const ctx = c.input.settings.context;

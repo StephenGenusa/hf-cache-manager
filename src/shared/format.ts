@@ -11,3 +11,6 @@ export function formatBytes(n: number): string {
   }
   return `${v.toFixed(1)} ${UNITS[i]!}`;
 }
+
+/** The size reason of a quant whose GGUF header has not been read. A Hub look-up answers with it before any header is read, so download mode shows a progress note in its place while the shapes are pending. */
+export const SHAPE_UNREAD_REASON = 'Model shape unknown: header unreadable';

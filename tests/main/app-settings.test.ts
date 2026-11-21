@@ -4,6 +4,7 @@ import { afterEach, beforeEach, expect, test } from 'vitest';
 import { AUTO_EMPTY_DEFAULT_DAYS } from '../../src/core/hold/held';
 import { SafeFs } from '../../src/core/safe-fs';
 import { EMPTY_DOWNLOADS, type QueueItem } from '../../src/main/download/queue';
+import { EMPTY_UPDATE_CHECK, type UpdateCheckBlock } from '../../src/main/update-block';
 import { AppSettingsStore, type AppSettings, DEFAULT_ADVICE, DEFAULT_SETTINGS, diskInfoFrom, probeSymlinks, queueUnreadable } from '../../src/main/app-settings';
 import { useCanaries } from '../helpers/canary';
 import { failingFs } from '../helpers/failing-fs';
@@ -253,4 +254,29 @@ test('valid JSON that is not an object makes the saved queue unreadable (fail cl
     expect(r.settings.downloads, text).toBeUndefined();
   }
   for (const text of ['{}', '{"autoEmptyDays":7}']) expect(queueUnreadable(await loadFrom(text)), text).toBeNull();
+});
+
+test('the updateCheck block round-trips; a bad block is dropped without touching the other settings', async () => {
+  const dir = await makeTmp('hfcm-settings-');
+  const store = new AppSettingsStore(dir, { makeSafeFs: userSafe(dir) });
+  const updateCheck: UpdateCheckBlock = {
+    version: 1, checkedAt: 5_000,
+    entries: [
+      { repoId: 'org/model', type: 'model', status: 'update', commit: 'a'.repeat(40), message: null, checkedAt: 5_000,
+        files: [{ path: 'm-Q4_K_M.gguf', size: 10, etag: 'b'.repeat(64), lfs: true }] },
+      { repoId: 'org/gone', type: 'dataset', status: 'failed', commit: null, message: 'Not found on the Hub', checkedAt: 4_000, files: [] },
+      { repoId: 'gpt2', type: 'model', status: 'skipped', commit: null, message: 'No main revision in the cache', checkedAt: 4_000, files: [] },
+    ],
+  };
+  await store.save({ autoEmptyDays: 7, advice: DEFAULT_ADVICE, updateCheck });
+  expect((await store.loadChecked())).toMatchObject({ error: null, settings: { autoEmptyDays: 7, updateCheck } });
+  const raw = JSON.parse(await readFile(join(dir, 'settings.json'), 'utf8')) as { updateCheck: { entries: Array<{ files: Array<{ path: string }> }> } };
+  raw.updateCheck.entries[0]!.files[0]!.path = '../outside';
+  await writeFile(join(dir, 'settings.json'), JSON.stringify(raw));
+  const bad = await store.loadChecked();
+  expect(bad.error).toBeNull();
+  expect(bad.settings.autoEmptyDays).toBe(7);
+  expect(bad.settings.updateCheck).toEqual(EMPTY_UPDATE_CHECK);
+  await store.save({ autoEmptyDays: 7, advice: DEFAULT_ADVICE });
+  expect((await store.load()).updateCheck).toBeUndefined();
 });

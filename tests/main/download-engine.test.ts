@@ -164,6 +164,24 @@ describe('a whole download', () => {
     expect(repo.files.filter((f) => f.isCurrent).map((f) => f.relpath).sort()).toEqual(['config.json', 'w/model.gguf']);
   });
 
+  test('while the unchanged cached files are re-checked before linking, the file says so (how much, of how much) and then is done', async () => {
+    const spec: FixtureSpec = { repos: [{ id: 'org/name', snapshots: [{ commit: OLD, files: [{ path: 'config.json', blob: { key: 'cfg', content: Buffer.from(J), etag: 'git-sha1' } }] }] }] };
+    const w = await world({ spec });
+    const rev = await w.client.revision('org/name', 'model', 'main');
+    const links = unchangedLinks(toRemoteListing({ repoId: 'org/name', type: 'model', commit: rev.commit, files: rev.siblings }), await scanHub(w.fx.hubRoot));
+    const e = w.engine();
+    await e.start(await w.item(['w/model.gguf'], 'main', links));
+    await e.whenIdle();
+    const mine = w.events.filter((x) => x.path === 'w/model.gguf');
+    const notes = mine.filter((x) => x.state === 'verifying' && x.error !== null).map((x) => x.error!);
+    expect(notes.length).toBeGreaterThanOrEqual(1);
+    expect(notes[0]).toBe(`Checking 1 unchanged file already in the cache before linking it: 0 B of ${Buffer.byteLength(J)} B`);
+    expect(notes.at(-1)).toBe(`Checking 1 unchanged file already in the cache before linking it: ${Buffer.byteLength(J)} B of ${Buffer.byteLength(J)} B`);
+    expect(mine.at(-1)).toMatchObject({ state: 'done' });
+    expect(mine.at(-1)!.error ?? '').not.toMatch(/Checking/);
+    expect(fileOf(e, 'w/model.gguf').error ?? '').not.toMatch(/Checking/);
+  });
+
   test('an older item finishing after a newer one never moves the ref back; the files stay linked', async () => {
     const NEWER = 'c3'.repeat(20);
     const w = await world();
@@ -256,7 +274,7 @@ describe('a whole download', () => {
     const e2 = w2.engine();
     await e2.start(await w2.item(['w/model.gguf']));
     await e2.whenIdle();
-    expect(fileOf(e2, 'w/model.gguf')).toMatchObject({ state: 'failed', error: MSG.different });
+    expect(fileOf(e2, 'w/model.gguf')).toMatchObject({ state: 'failed', error: MSG.blobMismatch });
     expect(await exists(snap(w2, 'w/model.gguf'))).toBe(false);
     expect(Buffer.from(await readFile(payload)).equals(damaged)).toBe(true);
   });
@@ -511,15 +529,16 @@ describe('refusals leave everything as found', () => {
     expect(await exists(join(w.folder, 'refs', 'main'))).toBe(false);
   });
 
-  test('a different blob already at blobs/<etag> → "a different file is already there", both files untouched, never linked', async () => {
+  test('a different blob already at blobs/<etag> → fails saying the cached file does not match and how to clear it; both files untouched, never linked', async () => {
     const w = await world();
     await mkdir(blobs(w), { recursive: true });
     await writeFile(join(blobs(w), EJ), 'not the config');
     const e = w.engine();
     await e.start(await w.item(['config.json']));
     await e.whenIdle();
-    expect(fileOf(e, 'config.json')).toMatchObject({ state: 'failed', error: MSG.different });
+    expect(fileOf(e, 'config.json')).toMatchObject({ state: 'failed', error: MSG.blobMismatch });
     expect(await readFile(join(blobs(w), EJ), 'utf8')).toBe('not the config');
+    expect(MSG.blobMismatch).toBe('the cache already has a file under this name with other content than the Hub\'s; delete it from the library, then download again');
     expect(await exists(snap(w, 'config.json'))).toBe(false);
   });
 
@@ -545,7 +564,7 @@ describe('refusals leave everything as found', () => {
         expect(fileOf(e, 'config.json').error).toContain(inc);
         expect(await readlink(snap(w, 'config.json'))).toBe(`../../blobs/${EJ}`);
       } else {
-        expect(fileOf(e, 'config.json')).toMatchObject({ state: 'failed', error: MSG.different });
+        expect(fileOf(e, 'config.json')).toMatchObject({ state: 'failed', error: MSG.blobMismatch });
         expect(await exists(snap(w, 'config.json'))).toBe(false);
       }
     }
@@ -1096,7 +1115,7 @@ describe('never deletes, truncates or overwrites', () => {
     const imports = [...src.matchAll(/^import .* from '([^']+)';$/gm)].map((m) => m[1]).sort();
     expect(imports).toEqual(['../../core/download/download-fs', '../../core/download/hash', '../../core/download/remote-repo',
       '../../core/exec/errors', '../../core/exec/lock', '../../core/fsx', '../../core/safe-fs', '../../core/types',
-      '../../shared/hub-input', '../app-settings', '../hub/client', './queue', 'node:path'].sort());
+      '../../shared/format', '../../shared/hub-input', '../app-settings', '../hub/client', './queue', 'node:path'].sort());
     expect(src).not.toMatch(/require\(|import\(/);
     // From fsx only the read-only names: factsOf, factsMatch, isNotFound, readFs, ReadFs.
     expect(/import \{ ([^}]+) \} from '..\/..\/core\/fsx'/.exec(src)?.[1]).toBe('factsMatch, factsOf, isNotFound, readFs, type ReadFs');
