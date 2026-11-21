@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.2.0 — 2026-11-20
 
 - **Check for updates:** one click compares every cached repo with its `main` revision on the Hub and gives an
   **update** badge to each repo where the Hub has a newer version of a file you already have. The **Updates** chip
